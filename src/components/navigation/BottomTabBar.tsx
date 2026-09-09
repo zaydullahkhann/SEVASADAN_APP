@@ -18,7 +18,26 @@ export const BottomTabBar: React.FC = () => {
     appointments,
     prescriptions,
     doctors,
+    activeDoctorId,
+    activeDeskBranchId,
   } = useApp();
+
+  const doctorAppointments = appointments.filter(
+    (a) => a.doctorId === activeDoctorId || !a.doctorId
+  );
+  const doctorWaitingCount = doctorAppointments.filter(
+    (a) => a.status === 'CONFIRMED'
+  ).length;
+  const doctorRxCount = prescriptions.filter(
+    (p) => p.doctorId === activeDoctorId
+  ).length;
+
+  const deskAppointments = appointments.filter(
+    (a) => activeDeskBranchId === 'all' || a.clinicId === activeDeskBranchId
+  );
+  const deskWaitingCount = deskAppointments.filter(
+    (a) => a.status === 'CONFIRMED'
+  ).length;
 
   const activeAppointmentsCount = appointments.filter(
     (a) => a.status === 'CONFIRMED' || a.status === 'IN_PROGRESS'
@@ -37,17 +56,17 @@ export const BottomTabBar: React.FC = () => {
     switch (activeRole) {
       case 'DOCTOR':
         return [
-          { key: 'home', label: 'Doctor OPD', icon: 'stethoscope', badge: waitingCount },
-          { key: 'prescriptions', label: 'Digital Rx', icon: 'prescription', badge: prescriptions.length },
-          { key: 'appointments', label: 'Visits Log', icon: 'calendar' },
+          { key: 'home', label: 'Doctor OPD', icon: 'stethoscope', badge: doctorWaitingCount },
+          { key: 'appointments', label: 'Visits Log', icon: 'calendar', badge: doctorWaitingCount },
+          { key: 'prescriptions', label: 'Prescriptions', icon: 'prescription', badge: doctorRxCount },
           { key: 'clinics', label: 'Branches', icon: 'hospital' },
           { key: 'profile', label: 'Account', icon: 'user' },
         ];
       case 'FRONT_DESK':
         return [
           { key: 'home', label: 'Counter Desk', icon: 'token' },
-          { key: 'appointments', label: 'Check-In', icon: 'check', badge: waitingCount },
-          { key: 'prescriptions', label: 'Rx Archive', icon: 'prescription' },
+          { key: 'appointments', label: 'Check-In', icon: 'check', badge: deskWaitingCount },
+          { key: 'prescriptions', label: 'Prescriptions', icon: 'prescription' },
           { key: 'clinics', label: 'Counters', icon: 'hospital' },
           { key: 'profile', label: 'Desk User', icon: 'user' },
         ];
@@ -71,7 +90,7 @@ export const BottomTabBar: React.FC = () => {
           },
           {
             key: 'prescriptions',
-            label: 'Digital Rx',
+            label: 'Prescriptions',
             icon: 'prescription',
             badge: prescriptions.length,
           },

@@ -96,6 +96,7 @@ export interface Medication {
 export interface Prescription {
   id: string;
   appointmentId: string;
+  doctorId?: string;
   patientName: string;
   patientPhone: string;
   doctorName: string;

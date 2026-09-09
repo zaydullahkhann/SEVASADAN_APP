@@ -76,20 +76,21 @@ const styles = StyleSheet.create({
     borderRadius: spacing.borderRadiusMd,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: spacing.cardPadding, // 10px
-    marginBottom: spacing.cardMarginVertical + 3, // ~8px
-    shadowColor: colors.shadow,
+    padding: spacing.cardPadding,
+    marginBottom: spacing.cardMarginVertical + 2,
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.8,
-    shadowRadius: 2,
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
     elevation: 1,
+    overflow: 'hidden',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingBottom: 6,
-    marginBottom: 6,
+    paddingBottom: 8,
+    marginBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: colors.surfaceSecondary,
   },
@@ -98,19 +99,20 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   title: {
-    fontSize: typography.sizes.sm + 1,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.text,
+    letterSpacing: -0.2,
   },
   subtitle: {
     fontSize: typography.sizes.xs,
     color: colors.textMuted,
-    marginTop: 1,
+    marginTop: 2,
   },
   rightAction: {
     alignItems: 'flex-end',
   },
   content: {
-    // Zero wasted margins
+    // Clean content container
   },
 });

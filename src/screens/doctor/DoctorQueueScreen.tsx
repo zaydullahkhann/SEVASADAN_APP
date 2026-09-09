@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
@@ -24,6 +25,7 @@ export const DoctorQueueScreen: React.FC = () => {
     openPrescriptionModal,
     openVideoCall,
     completeConsultation,
+    setActiveTab,
   } = useApp();
 
   const doctor = doctors.find((d) => d.id === activeDoctorId) || doctors[0];
@@ -109,6 +111,26 @@ export const DoctorQueueScreen: React.FC = () => {
             <Text style={styles.statLbl}>OPD Fee</Text>
           </View>
         </View>
+
+        {/* Quick Link to Full Patient Visits Log */}
+        <TouchableOpacity
+          style={styles.visitsQuickLink}
+          activeOpacity={0.75}
+          onPress={() => setActiveTab('appointments')}
+        >
+          <View style={styles.visitsQuickLinkLeft}>
+            <Text style={styles.visitsQuickLinkIcon}>📅</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.visitsQuickLinkTitle}>
+                Patient Visits & Schedule Log
+              </Text>
+              <Text style={styles.visitsQuickLinkSub}>
+                {waitingPatients.length} waiting • {completedPatients.length} completed today • Tap to open
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.visitsQuickLinkArrow}>➔</Text>
+        </TouchableOpacity>
       </CompactCard>
 
       {/* 1. Current Active Consultation (If any) */}
@@ -156,7 +178,7 @@ export const DoctorQueueScreen: React.FC = () => {
               />
             )}
             <Button
-              title="Write & Sign Rx"
+              title="Write Prescription"
               onPress={() => openPrescriptionModal(activePatient)}
               variant="primary"
               size="sm"
@@ -263,9 +285,18 @@ export const DoctorQueueScreen: React.FC = () => {
 
       {/* 3. Completed Today List */}
       <View style={[styles.sectionHeader, { marginTop: 12 }]}>
-        <Text style={styles.sectionTitle}>
-          Completed Today ({completedPatients.length})
-        </Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>
+            Completed Today ({completedPatients.length})
+          </Text>
+          <TouchableOpacity
+            onPress={() => setActiveTab('appointments')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.viewAllVisitsLink}>All Visits Log ➔</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {completedPatients.map((apt) => (
@@ -407,49 +438,49 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   activePatientMeta: {
-    fontSize: 9,
+    fontSize: typography.sizes.xs,
     color: colors.textSecondary,
-    marginTop: 1,
+    marginTop: 2,
   },
   reasonBox: {
     backgroundColor: colors.white,
-    padding: 6,
-    borderRadius: 4,
-    marginVertical: 6,
+    padding: 8,
+    borderRadius: 6,
+    marginVertical: 8,
   },
   reasonLbl: {
-    fontSize: 8.5,
+    fontSize: typography.sizes.xxs,
     fontWeight: typography.weights.bold,
     color: colors.textMuted,
   },
   reasonVal: {
-    fontSize: typography.sizes.xxs + 0.5,
+    fontSize: typography.sizes.xs,
     color: colors.text,
     fontWeight: typography.weights.medium,
-    marginTop: 1,
+    marginTop: 2,
   },
   activeActionsRow: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 8,
   },
   halfBtn: {
     flex: 1,
   },
   noActiveCard: {
     backgroundColor: colors.white,
-    paddingVertical: 12,
+    paddingVertical: 14,
     alignItems: 'center',
     marginBottom: 8,
   },
   noActiveTitle: {
-    fontSize: typography.sizes.xs + 1,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
   noActiveSub: {
-    fontSize: typography.sizes.xxs,
+    fontSize: typography.sizes.xs,
     color: colors.textMuted,
-    marginTop: 2,
+    marginTop: 3,
     textAlign: 'center',
   },
   callNextBtn: {
@@ -464,16 +495,16 @@ const styles = StyleSheet.create({
   },
   queueIndexBox: {
     alignItems: 'center',
-    marginRight: 8,
-    minWidth: 45,
+    marginRight: 10,
+    minWidth: 48,
   },
   queueIndexText: {
-    fontSize: 9,
+    fontSize: typography.sizes.xxs,
     color: colors.textMuted,
     fontWeight: typography.weights.bold,
   },
   queueTokenBadge: {
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes.sm,
     fontWeight: typography.weights.extraBold,
     color: colors.primary,
   },
@@ -486,36 +517,36 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   waitingName: {
-    fontSize: typography.sizes.xs + 0.5,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
   waitingMeta: {
-    fontSize: 9,
+    fontSize: typography.sizes.xxs,
     color: colors.textMuted,
   },
   waitingReason: {
-    fontSize: 9.5,
+    fontSize: typography.sizes.xs,
     color: colors.textSecondary,
     fontStyle: 'italic',
   },
   waitingActionCol: {
-    marginLeft: 6,
+    marginLeft: 8,
   },
   miniBtn: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
   },
   emptyBox: {
-    paddingVertical: 12,
+    paddingVertical: 14,
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: typography.sizes.xxs + 1,
+    fontSize: typography.sizes.xs,
     color: colors.textMuted,
   },
   completedCard: {
-    marginBottom: 4,
+    marginBottom: 6,
     backgroundColor: '#F8FAFC',
   },
   completedRow: {
@@ -524,12 +555,59 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   completedName: {
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
   completedSub: {
-    fontSize: 8.5,
+    fontSize: typography.sizes.xxs,
     color: colors.textMuted,
+  },
+  visitsQuickLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginTop: 10,
+  },
+  visitsQuickLinkLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  visitsQuickLinkIcon: {
+    fontSize: 20,
+  },
+  visitsQuickLinkTitle: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.bold,
+    color: colors.secondaryDark,
+  },
+  visitsQuickLinkSub: {
+    fontSize: typography.sizes.xxs,
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+  visitsQuickLinkArrow: {
+    fontSize: 16,
+    color: colors.secondaryDark,
+    fontWeight: typography.weights.bold,
+    marginLeft: 8,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  viewAllVisitsLink: {
+    fontSize: typography.sizes.xxs + 1,
+    fontWeight: typography.weights.semiBold,
+    color: colors.secondaryDark,
   },
 });

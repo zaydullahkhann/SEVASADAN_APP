@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { Alert } from 'react-native';
 import {
   Appointment,
   Prescription,
@@ -194,7 +195,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setIsPrescriptionModalOpen(false);
   };
 
-  const openVideoCall = (apt: Appointment) => setActiveVideoAppointment(apt);
+  const openVideoCall = (apt: Appointment) => {
+    if (activeRole !== 'DOCTOR' && activeRole !== 'PATIENT') {
+      Alert.alert(
+        'Access Restricted',
+        'Live video consultations are exclusively reserved between Doctor and Patient roles.'
+      );
+      return;
+    }
+    setActiveVideoAppointment(apt);
+  };
   const closeVideoCall = () => setActiveVideoAppointment(null);
 
   const addPrescription = (rx: Prescription) => {
@@ -409,6 +419,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const newRx: Prescription = {
         id: `rx-${Date.now()}`,
         appointmentId,
+        doctorId: rxData.doctorId || apt?.doctorId || activeDoctorId,
         patientName: rxData.patientName || apt?.patientName || 'Patient',
         patientPhone: rxData.patientPhone || apt?.patientPhone || '',
         doctorName: rxData.doctorName || apt?.doctorName || 'Dr. Ankur Deshwali',

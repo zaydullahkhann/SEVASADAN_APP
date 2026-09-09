@@ -65,12 +65,12 @@ export const Button: React.FC<ButtonProps> = ({
   const getPadding = () => {
     switch (size) {
       case 'sm':
-        return { py: 6, px: 10, fontSize: typography.sizes.xs, iconSize: 12 };
+        return { py: 7, px: 12, fontSize: typography.sizes.sm, iconSize: 13 };
       case 'lg':
-        return { py: 12, px: 18, fontSize: typography.sizes.base, iconSize: 16 };
+        return { py: 13, px: 20, fontSize: typography.sizes.lg, iconSize: 16 };
       case 'md':
       default:
-        return { py: 8, px: 14, fontSize: typography.sizes.sm, iconSize: 14 };
+        return { py: 10, px: 16, fontSize: typography.sizes.base, iconSize: 15 };
     }
   };
 
@@ -87,7 +87,7 @@ export const Button: React.FC<ButtonProps> = ({
         {
           backgroundColor: conf.bg,
           borderColor: conf.border || 'transparent',
-          borderWidth: conf.border ? 1.5 : 0,
+          borderWidth: conf.border ? 1 : 0,
           paddingVertical: pad.py,
           paddingHorizontal: pad.px,
           width: fullWidth ? '100%' : 'auto',
@@ -130,7 +130,7 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: spacing.borderRadiusSm + 2,
+    borderRadius: spacing.borderRadiusSm,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -143,6 +143,7 @@ const styles = StyleSheet.create({
   text: {
     fontWeight: typography.weights.semiBold,
     textAlign: 'center',
+    letterSpacing: -0.1,
   },
   iconLeft: {
     marginRight: 6,

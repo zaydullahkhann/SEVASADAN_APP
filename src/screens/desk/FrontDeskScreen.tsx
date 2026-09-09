@@ -348,15 +348,15 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   filterPill: {
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: 3,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 4,
   },
   filterPillActive: {
     backgroundColor: colors.primary,
   },
   filterPillText: {
-    fontSize: 8.5,
+    fontSize: typography.sizes.xxs,
     fontWeight: typography.weights.medium,
     color: colors.textMuted,
   },
@@ -365,26 +365,26 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.bold,
   },
   registerCard: {
-    marginBottom: 8,
+    marginBottom: 10,
   },
   registerGrid: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
   regCol: {
     alignItems: 'center',
   },
   regVal: {
-    fontSize: typography.sizes.sm + 1,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
   regLbl: {
-    fontSize: 8.5,
+    fontSize: typography.sizes.xxs,
     color: colors.textMuted,
-    marginTop: 1,
+    marginTop: 2,
   },
   regSep: {
     width: 1,
@@ -397,11 +397,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: colors.surfaceSecondary,
-    paddingTop: 6,
-    marginTop: 4,
+    paddingTop: 8,
+    marginTop: 6,
   },
   regFootText: {
-    fontSize: 9,
+    fontSize: typography.sizes.xxs,
     color: colors.textSecondary,
   },
   checkInCard: {
@@ -415,15 +415,15 @@ const styles = StyleSheet.create({
   checkInLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     flex: 1,
   },
   tokenBox: {
     alignItems: 'center',
-    minWidth: 50,
+    minWidth: 54,
   },
   tokenBoxNum: {
-    fontSize: typography.sizes.xs + 1,
+    fontSize: typography.sizes.sm,
     fontWeight: typography.weights.extraBold,
     color: colors.primary,
     marginBottom: 2,
@@ -432,18 +432,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   patientName: {
-    fontSize: typography.sizes.xs + 0.5,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
   patientSub: {
-    fontSize: 9,
+    fontSize: typography.sizes.xxs,
     color: colors.textMuted,
   },
   docNameText: {
-    fontSize: 9,
+    fontSize: typography.sizes.xxs,
     color: colors.textSecondary,
-    marginTop: 1,
+    marginTop: 2,
   },
   boldDoc: {
     fontWeight: typography.weights.bold,
@@ -451,19 +451,19 @@ const styles = StyleSheet.create({
   },
   checkInAction: {
     alignItems: 'flex-end',
-    marginLeft: 6,
+    marginLeft: 8,
   },
   paymentMethodText: {
-    fontSize: 8.5,
+    fontSize: typography.sizes.xxs,
     color: colors.secondaryDark,
     fontWeight: typography.weights.bold,
   },
   emptyBox: {
-    paddingVertical: 20,
+    paddingVertical: 24,
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: typography.sizes.xxs + 1,
+    fontSize: typography.sizes.xs,
     color: colors.textMuted,
   },
 });

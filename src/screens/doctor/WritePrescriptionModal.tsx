@@ -112,7 +112,7 @@ export const WritePrescriptionModal: React.FC = () => {
 
     closePrescriptionModal();
     Alert.alert(
-      'Digital Rx Signed & Issued',
+      'Prescription Signed & Issued',
       `Prescription generated for ${prescriptionModalApt.patientName}.\nToken #${prescriptionModalApt.tokenNumber} marked as completed.`
     );
   };
@@ -141,7 +141,7 @@ export const WritePrescriptionModal: React.FC = () => {
                 <Icon name="prescription" size={16} color={colors.white} />
               </View>
               <View>
-                <Text style={styles.headerTitle}>Write & Sign Digital Rx</Text>
+                <Text style={styles.headerTitle}>Write & Sign Prescription</Text>
                 <Text style={styles.headerSub}>
                   {prescriptionModalApt.patientName} ({prescriptionModalApt.patientAge}y, {prescriptionModalApt.patientGender}) • Token #{prescriptionModalApt.tokenNumber}
                 </Text>
@@ -303,7 +303,7 @@ export const WritePrescriptionModal: React.FC = () => {
               style={{ flex: 1 }}
             />
             <Button
-              title="Sign & Issue Digital Rx"
+              title="Sign & Issue Prescription"
               onPress={handleSignAndIssue}
               variant="secondary"
               size="sm"

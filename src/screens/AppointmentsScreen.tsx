@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  Modal,
 } from 'react-native';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
@@ -19,18 +20,49 @@ import { Button } from '../components/common/Button';
 
 export const AppointmentsScreen: React.FC = () => {
   const {
+    activeRole,
+    activeDoctorId,
+    activeDeskBranchId,
     appointments,
     cancelAppointment,
     queueStatuses,
     advanceQueue,
     openVideoCall,
     openBookingModal,
+    openPrescriptionModal,
+    openWalkInModal,
   } = useApp();
 
   const [segment, setSegment] = useState<'UPCOMING' | 'PAST' | 'CANCELLED'>('UPCOMING');
-  const [activeQueueClinicId, setActiveQueueClinicId] = useState<string>('sarangpur');
+  const [activeQueueClinicId, setActiveQueueClinicId] = useState<string>(
+    activeDeskBranchId || 'sarangpur'
+  );
+  const [selectedAptDetails, setSelectedAptDetails] = useState<(typeof appointments)[0] | null>(null);
 
-  const filtered = appointments.filter((apt) => {
+  const roleFilteredAppointments = appointments.filter((apt) => {
+    if (activeRole === 'DOCTOR') {
+      return (
+        apt.doctorId === activeDoctorId ||
+        apt.doctorName.toLowerCase().includes('ankur')
+      );
+    }
+    if (activeRole === 'FRONT_DESK') {
+      return activeDeskBranchId ? apt.clinicId === activeDeskBranchId : true;
+    }
+    return true;
+  });
+
+  const upcomingCount = roleFilteredAppointments.filter(
+    (a) => a.status === 'CONFIRMED' || a.status === 'IN_PROGRESS'
+  ).length;
+  const pastCount = roleFilteredAppointments.filter(
+    (a) => a.status === 'COMPLETED'
+  ).length;
+  const cancelledCount = roleFilteredAppointments.filter(
+    (a) => a.status === 'CANCELLED'
+  ).length;
+
+  const filtered = roleFilteredAppointments.filter((apt) => {
     if (segment === 'UPCOMING') {
       return apt.status === 'CONFIRMED' || apt.status === 'IN_PROGRESS';
     }
@@ -49,7 +81,7 @@ export const AppointmentsScreen: React.FC = () => {
     estimatedWaitMinutesPerPatient: 8,
   };
 
-  // Find if current user has an active token in this clinic
+  // Active token for current user
   const userApt = appointments.find(
     (a) =>
       a.clinicId === activeQueueClinicId &&
@@ -59,7 +91,7 @@ export const AppointmentsScreen: React.FC = () => {
   const handleCancel = (id: string, token: string) => {
     Alert.alert(
       'Cancel Appointment',
-      `Are you sure you want to cancel token #${token}? Refund or slot relinquishment will be processed.`,
+      `Are you sure you want to cancel token #${token}?`,
       [
         { text: 'Keep Slot', style: 'cancel' },
         {
@@ -74,7 +106,7 @@ export const AppointmentsScreen: React.FC = () => {
   const handleViewPass = (token: string, patient: string, doc: string, clinic: string) => {
     Alert.alert(
       `OPD Token Pass: ${token}`,
-      `Patient: ${patient}\nConsultant: ${doc}\nClinic: ${clinic}\nStatus: Confirmed & Active in Queue\n\nPlease arrive 15 minutes before your estimated time.`
+      `Patient: ${patient}\nConsultant: ${doc}\nClinic: ${clinic}\nStatus: Confirmed\n\nPlease arrive 15 minutes before your estimated time.`
     );
   };
 
@@ -84,15 +116,15 @@ export const AppointmentsScreen: React.FC = () => {
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
-      {/* 1. Live OPD Queue Tracker Widget */}
-      <CompactCard style={styles.trackerCard} borderAccent={colors.warning}>
+      {/* 1. Clean OPD Live Queue Tracker */}
+      <CompactCard style={styles.trackerCard}>
         <View style={styles.trackerHeader}>
           <View style={styles.trackerTitleRow}>
             <View style={styles.livePulse} />
             <Text style={styles.trackerTitle}>Live OPD Queue Tracker</Text>
           </View>
 
-          {/* Branch Selector for Queue */}
+          {/* Branch Selector */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.queueChips}>
             {CLINICS.map((c) => (
               <TouchableOpacity
@@ -116,40 +148,67 @@ export const AppointmentsScreen: React.FC = () => {
           </ScrollView>
         </View>
 
-        {/* Tokens Display */}
+        {/* Big Numbers Display */}
         <View style={styles.queueDisplayRow}>
           <View style={styles.queueCol}>
             <Text style={styles.queueColLabel}>NOW SERVING</Text>
             <Text style={styles.servingBigNumber}>
               {queueStatus.currentServingToken}
             </Text>
-            <Text style={styles.queueColSub}>Room 1 (OPD Desk)</Text>
+            <Text style={styles.queueColSub}>Room 1 (OPD)</Text>
           </View>
 
           <View style={styles.queueDivider} />
 
           <View style={styles.queueCol}>
-            <Text style={styles.queueColLabel}>YOUR TOKEN</Text>
-            <Text
-              style={[
-                styles.userTokenNumber,
-                !userApt && { color: colors.textMuted },
-              ]}
-            >
-              {userApt ? userApt.tokenNumber : 'No Active'}
-            </Text>
-            <Text style={styles.queueColSub}>
-              {userApt
-                ? `${Math.max(0, userApt.tokenIndex - queueStatus.currentServingIndex)} ahead`
-                : 'Book to get pass'}
-            </Text>
+            {activeRole === 'PATIENT' ? (
+              <>
+                <Text style={styles.queueColLabel}>YOUR TOKEN</Text>
+                <Text
+                  style={[
+                    styles.userTokenNumber,
+                    !userApt && { color: colors.textMuted },
+                  ]}
+                >
+                  {userApt ? userApt.tokenNumber : 'None'}
+                </Text>
+                <Text style={styles.queueColSub}>
+                  {userApt
+                    ? `${Math.max(0, userApt.tokenIndex - queueStatus.currentServingIndex)} ahead`
+                    : 'No active token'}
+                </Text>
+              </>
+            ) : activeRole === 'DOCTOR' ? (
+              <>
+                <Text style={styles.queueColLabel}>PATIENTS IN LINE</Text>
+                <Text style={styles.userTokenNumber}>
+                  {
+                    appointments.filter(
+                      (a) =>
+                        (a.doctorId === activeDoctorId ||
+                          a.doctorName.toLowerCase().includes('ankur')) &&
+                        a.status === 'CONFIRMED'
+                    ).length
+                  }
+                </Text>
+                <Text style={styles.queueColSub}>Waiting for OPD</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.queueColLabel}>TOTAL TODAY</Text>
+                <Text style={styles.userTokenNumber}>
+                  {queueStatus.totalIssuedToday}
+                </Text>
+                <Text style={styles.queueColSub}>Tokens Issued</Text>
+              </>
+            )}
           </View>
         </View>
 
-        {/* Queue Meta Bar */}
+        {/* Queue Wait Time & Action */}
         <View style={styles.queueMetaBar}>
           <View style={styles.metaItem}>
-            <Icon name="clock" size={10} color={colors.textSecondary} />
+            <Icon name="clock" size={11} color={colors.textSecondary} />
             <Text style={styles.metaItemText}>
               Avg wait ~{queueStatus.estimatedWaitMinutesPerPatient}m / patient
             </Text>
@@ -158,21 +217,19 @@ export const AppointmentsScreen: React.FC = () => {
             onPress={() => advanceQueue(activeQueueClinicId)}
             style={styles.advanceSimBtn}
           >
-            <Icon name="refresh" size={9} color={colors.primary} />
+            <Icon name="refresh" size={10} color={colors.primary} />
             <Text style={styles.advanceSimText}>Next Token (Demo)</Text>
           </TouchableOpacity>
         </View>
       </CompactCard>
 
-      {/* 2. Segmented Filter */}
+      {/* 2. Clean Segmented Tabs */}
       <View style={styles.segmentContainer}>
-        {(
-          [
-            { key: 'UPCOMING', label: 'Upcoming Visits' },
-            { key: 'PAST', label: 'Past Visits' },
-            { key: 'CANCELLED', label: 'Cancelled' },
-          ] as const
-        ).map((s) => (
+        {[
+          { key: 'UPCOMING' as const, label: `Upcoming (${upcomingCount})` },
+          { key: 'PAST' as const, label: `Past (${pastCount})` },
+          { key: 'CANCELLED' as const, label: `Cancelled (${cancelledCount})` },
+        ].map((s) => (
           <TouchableOpacity
             key={s.key}
             onPress={() => setSegment(s.key)}
@@ -190,22 +247,40 @@ export const AppointmentsScreen: React.FC = () => {
         ))}
       </View>
 
-      {/* 3. Appointment Cards List */}
+      {/* 3. Appointment List */}
       {filtered.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Icon name="calendar" size={36} color={colors.textLight} />
           <Text style={styles.emptyTitle}>No {segment.toLowerCase()} visits</Text>
           <Text style={styles.emptySub}>
-            Book a physical clinic visit or online video consultation in seconds.
+            {activeRole === 'DOCTOR'
+              ? segment === 'UPCOMING' && pastCount > 0
+                ? `All ${pastCount} assigned consultations for today have been completed!`
+                : 'Patients assigned to your consultation schedule will appear here.'
+              : activeRole === 'FRONT_DESK'
+              ? 'Issue walk-in tokens from the counter desk to add patients.'
+              : 'Book a clinic visit or online video consultation in seconds.'}
           </Text>
-          <Button
-            title="Book In-Clinic or Video OPD"
-            onPress={() => openBookingModal()}
-            variant="primary"
-            size="sm"
-            icon="token"
-            style={{ marginTop: 8 }}
-          />
+          {activeRole === 'PATIENT' && (
+            <Button
+              title="Book In-Clinic or Video OPD"
+              onPress={() => openBookingModal()}
+              variant="primary"
+              size="sm"
+              icon="token"
+              style={{ marginTop: 12 }}
+            />
+          )}
+          {activeRole === 'FRONT_DESK' && (
+            <Button
+              title="Issue Walk-In Token"
+              onPress={() => openWalkInModal()}
+              variant="secondary"
+              size="sm"
+              icon="token"
+              style={{ marginTop: 12 }}
+            />
+          )}
         </View>
       ) : (
         filtered.map((apt) => {
@@ -215,14 +290,14 @@ export const AppointmentsScreen: React.FC = () => {
             <CompactCard
               key={apt.id}
               style={styles.aptCard}
-              borderAccent={isOnline ? colors.accent : colors.primary}
+              onPress={() => setSelectedAptDetails(apt)}
             >
-              {/* Card Top Row */}
+              {/* Top Row: Token, Mode & Status */}
               <View style={styles.aptTopRow}>
                 <View style={styles.tokenBadgeWrap}>
                   <Text style={styles.aptTokenText}>{apt.tokenNumber}</Text>
                   <Badge
-                    label={isOnline ? 'Virtual Video OPD' : 'In-Clinic Physical'}
+                    label={isOnline ? 'Video OPD' : 'In-Clinic'}
                     variant={isOnline ? 'accent' : 'primary'}
                     size="sm"
                   />
@@ -240,60 +315,52 @@ export const AppointmentsScreen: React.FC = () => {
                 />
               </View>
 
-              {/* Doctor & Patient Info */}
+              {/* Body: Doctor & Patient Info */}
               <View style={styles.aptBody}>
-                <View style={styles.infoRow}>
-                  <View style={styles.infoCol}>
-                    <Text style={styles.labelMuted}>DOCTOR & CLINIC</Text>
-                    <Text style={styles.boldText}>{apt.doctorName}</Text>
-                    <Text style={styles.subText}>{apt.clinicName}</Text>
-                  </View>
+                <Text style={styles.aptDoctorName}>{apt.doctorName}</Text>
+                <Text style={styles.aptClinicSub}>{apt.clinicName}</Text>
 
-                  <View style={[styles.infoCol, { alignItems: 'flex-end' }]}>
-                    <Text style={styles.labelMuted}>PATIENT</Text>
-                    <Text style={styles.boldText}>{apt.patientName}</Text>
-                    <Text style={styles.subText}>
-                      {apt.patientAge}y • {apt.patientGender}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Date & Slot Banner */}
-                <View style={styles.slotBanner}>
+                <View style={styles.aptSlotRow}>
                   <View style={styles.slotLeft}>
-                    <Icon name="calendar" size={11} color={colors.primary} />
+                    <Icon name="calendar" size={12} color={colors.primary} />
                     <Text style={styles.slotDateText}>
-                      {apt.date} at {apt.timeSlot}
+                      {apt.date} • {apt.timeSlot}
                     </Text>
                   </View>
-                  <Text style={styles.feePaidText}>
-                    {apt.paymentMethod === 'ONLINE_UPI' ? '₹' + apt.feePaid + ' Paid Online' : 'Pay at Counter'}
+                  <Text style={styles.patientNameLabel}>
+                    Patient: <Text style={{ fontWeight: '600', color: colors.text }}>{apt.patientName}</Text>
                   </Text>
                 </View>
-
-                {apt.reasonForVisit ? (
-                  <Text style={styles.reasonText} numberOfLines={1}>
-                    Reason: {apt.reasonForVisit}
-                  </Text>
-                ) : null}
               </View>
 
-              {/* Actions Footer */}
+              {/* Action Buttons */}
               <View style={styles.aptActions}>
                 {apt.status === 'CONFIRMED' && (
                   <>
-                    {isOnline ? (
+                    {activeRole === 'DOCTOR' ? (
+                      <>
+                        {isOnline && (
+                          <Button
+                            title="Join Video"
+                            onPress={() => openVideoCall(apt)}
+                            variant="secondary"
+                            size="sm"
+                            icon="video"
+                            style={{ flex: 1.2 }}
+                          />
+                        )}
+                        <Button
+                          title="Write Prescription"
+                          onPress={() => openPrescriptionModal(apt)}
+                          variant="primary"
+                          size="sm"
+                          icon="prescription"
+                          style={{ flex: 1 }}
+                        />
+                      </>
+                    ) : activeRole === 'FRONT_DESK' ? (
                       <Button
-                        title="Join Video OPD Room"
-                        onPress={() => openVideoCall(apt)}
-                        variant="secondary"
-                        size="sm"
-                        icon="video"
-                        style={{ flex: 1.5 }}
-                      />
-                    ) : (
-                      <Button
-                        title="View Token Pass"
+                        title="Print Token Pass"
                         onPress={() =>
                           handleViewPass(
                             apt.tokenNumber,
@@ -305,7 +372,32 @@ export const AppointmentsScreen: React.FC = () => {
                         variant="outline"
                         size="sm"
                         icon="receipt"
-                        style={{ flex: 1.2 }}
+                        style={{ flex: 1 }}
+                      />
+                    ) : isOnline ? (
+                      <Button
+                        title="Join Video OPD"
+                        onPress={() => openVideoCall(apt)}
+                        variant="secondary"
+                        size="sm"
+                        icon="video"
+                        style={{ flex: 1.5 }}
+                      />
+                    ) : (
+                      <Button
+                        title="View Pass"
+                        onPress={() =>
+                          handleViewPass(
+                            apt.tokenNumber,
+                            apt.patientName,
+                            apt.doctorName,
+                            apt.clinicName
+                          )
+                        }
+                        variant="outline"
+                        size="sm"
+                        icon="receipt"
+                        style={{ flex: 1 }}
                       />
                     )}
 
@@ -318,10 +410,100 @@ export const AppointmentsScreen: React.FC = () => {
                     />
                   </>
                 )}
+
+                {apt.status === 'COMPLETED' && (
+                  <Button
+                    title="View Summary"
+                    onPress={() => setSelectedAptDetails(apt)}
+                    variant="outline"
+                    size="sm"
+                    style={{ flex: 1 }}
+                  />
+                )}
               </View>
             </CompactCard>
           );
         })
+      )}
+
+      {/* Appointment Detail Modal */}
+      {selectedAptDetails && (
+        <Modal
+          visible={!!selectedAptDetails}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setSelectedAptDetails(null)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalHeader}>
+                <View>
+                  <Text style={styles.modalTitle}>Appointment Details</Text>
+                  <Text style={styles.modalSub}>Token #{selectedAptDetails.tokenNumber}</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setSelectedAptDetails(null)}
+                  style={styles.modalCloseBtn}
+                >
+                  <Icon name="close" size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                <View style={styles.modalDetailRow}>
+                  <Text style={styles.modalLabel}>Doctor:</Text>
+                  <Text style={styles.modalValue}>{selectedAptDetails.doctorName}</Text>
+                </View>
+                <View style={styles.modalDetailRow}>
+                  <Text style={styles.modalLabel}>Clinic Branch:</Text>
+                  <Text style={styles.modalValue}>{selectedAptDetails.clinicName}</Text>
+                </View>
+                <View style={styles.modalDetailRow}>
+                  <Text style={styles.modalLabel}>Patient:</Text>
+                  <Text style={styles.modalValue}>
+                    {selectedAptDetails.patientName} ({selectedAptDetails.patientAge}y, {selectedAptDetails.patientGender})
+                  </Text>
+                </View>
+                <View style={styles.modalDetailRow}>
+                  <Text style={styles.modalLabel}>Date & Time:</Text>
+                  <Text style={styles.modalValue}>
+                    {selectedAptDetails.date} at {selectedAptDetails.timeSlot}
+                  </Text>
+                </View>
+                <View style={styles.modalDetailRow}>
+                  <Text style={styles.modalLabel}>Mode:</Text>
+                  <Text style={styles.modalValue}>
+                    {selectedAptDetails.consultationMode === 'ONLINE_VIDEO'
+                      ? 'Private Video Tele-OPD'
+                      : 'In-Clinic Physical Visit'}
+                  </Text>
+                </View>
+                <View style={styles.modalDetailRow}>
+                  <Text style={styles.modalLabel}>Payment:</Text>
+                  <Text style={styles.modalValue}>
+                    ₹{selectedAptDetails.feePaid} ({selectedAptDetails.paymentMethod === 'ONLINE_UPI' ? 'Paid via UPI' : 'Pay at Counter'})
+                  </Text>
+                </View>
+                {selectedAptDetails.reasonForVisit && (
+                  <View style={styles.modalDetailRow}>
+                    <Text style={styles.modalLabel}>Reason for Visit:</Text>
+                    <Text style={styles.modalValue}>{selectedAptDetails.reasonForVisit}</Text>
+                  </View>
+                )}
+              </ScrollView>
+
+              <View style={styles.modalFooter}>
+                <Button
+                  title="Close"
+                  onPress={() => setSelectedAptDetails(null)}
+                  variant="outline"
+                  size="md"
+                  fullWidth
+                />
+              </View>
+            </View>
+          </View>
+        </Modal>
       )}
     </ScrollView>
   );
@@ -334,13 +516,12 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: spacing.screenPaddingHorizontal,
-    paddingTop: 8,
-    paddingBottom: 24,
+    paddingTop: 10,
+    paddingBottom: 28,
   },
   trackerCard: {
     backgroundColor: colors.white,
-    borderColor: '#FDE68A',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   trackerHeader: {
     marginBottom: 8,
@@ -348,8 +529,8 @@ const styles = StyleSheet.create({
   trackerTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
+    gap: 8,
+    marginBottom: 8,
   },
   livePulse: {
     width: 8,
@@ -358,7 +539,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.danger,
   },
   trackerTitle: {
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
@@ -366,17 +547,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   queueChip: {
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    borderRadius: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 999,
     backgroundColor: colors.surfaceSecondary,
-    marginRight: 4,
+    marginRight: 6,
   },
   queueChipActive: {
     backgroundColor: colors.primary,
   },
   queueChipText: {
-    fontSize: typography.sizes.xxs,
+    fontSize: typography.sizes.xs,
     color: colors.textSecondary,
     fontWeight: typography.weights.medium,
   },
@@ -386,49 +567,48 @@ const styles = StyleSheet.create({
   },
   queueDisplayRow: {
     flexDirection: 'row',
-    backgroundColor: '#FAFAF9',
+    backgroundColor: colors.surfaceSecondary,
     borderRadius: spacing.borderRadiusSm,
-    paddingVertical: 8,
+    paddingVertical: 10,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   queueCol: {
     flex: 1,
     alignItems: 'center',
   },
   queueColLabel: {
-    fontSize: 8.5,
-    color: colors.textMuted,
+    fontSize: typography.sizes.xxs,
     fontWeight: typography.weights.bold,
+    color: colors.textMuted,
     letterSpacing: 0.5,
   },
   servingBigNumber: {
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes.huge,
     fontWeight: typography.weights.extraBold,
     color: colors.primary,
-    marginVertical: 1,
+    marginTop: 2,
   },
   userTokenNumber: {
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes.huge,
     fontWeight: typography.weights.extraBold,
     color: colors.secondaryDark,
-    marginVertical: 1,
+    marginTop: 2,
   },
   queueColSub: {
-    fontSize: 9,
+    fontSize: typography.sizes.xxs,
     color: colors.textMuted,
+    marginTop: 2,
   },
   queueDivider: {
     width: 1,
     height: 36,
-    backgroundColor: colors.borderDark,
+    backgroundColor: colors.border,
   },
   queueMetaBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: 8,
     paddingTop: 6,
     borderTopWidth: 1,
     borderTopColor: colors.surfaceSecondary,
@@ -436,153 +616,192 @@ const styles = StyleSheet.create({
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
   },
   metaItemText: {
-    fontSize: 9.5,
-    color: colors.textSecondary,
+    fontSize: typography.sizes.xxs,
+    color: colors.textMuted,
   },
   advanceSimBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    backgroundColor: colors.primaryLight,
+    gap: 4,
     paddingVertical: 2,
     paddingHorizontal: 6,
-    borderRadius: 4,
   },
   advanceSimText: {
-    fontSize: 9,
+    fontSize: typography.sizes.xxs,
     color: colors.primary,
     fontWeight: typography.weights.bold,
   },
   segmentContainer: {
     flexDirection: 'row',
-    backgroundColor: colors.surfaceSecondary,
+    backgroundColor: colors.white,
     borderRadius: spacing.borderRadiusSm,
-    padding: 2,
-    marginVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 3,
+    marginBottom: 10,
   },
   segmentBtn: {
     flex: 1,
     paddingVertical: 6,
     alignItems: 'center',
-    borderRadius: 4,
+    borderRadius: spacing.borderRadiusSm - 2,
   },
   segmentBtnActive: {
-    backgroundColor: colors.white,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1,
-    elevation: 1,
+    backgroundColor: colors.primary,
   },
   segmentText: {
-    fontSize: typography.sizes.xxs + 0.5,
-    color: colors.textMuted,
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
     fontWeight: typography.weights.medium,
   },
   segmentTextActive: {
-    color: colors.primary,
+    color: colors.white,
     fontWeight: typography.weights.bold,
   },
   emptyContainer: {
     alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 16,
+    paddingVertical: 40,
   },
   emptyTitle: {
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.text,
-    marginTop: 8,
+    marginTop: 10,
   },
   emptySub: {
-    fontSize: typography.sizes.xxs + 0.5,
+    fontSize: typography.sizes.xs,
     color: colors.textMuted,
     textAlign: 'center',
-    marginTop: 2,
+    marginTop: 4,
+    paddingHorizontal: 20,
+    lineHeight: 18,
   },
   aptCard: {
-    marginBottom: 8,
+    marginBottom: 10,
   },
   aptTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   tokenBadgeWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   aptTokenText: {
-    fontSize: typography.sizes.sm + 1,
-    fontWeight: typography.weights.extraBold,
+    fontSize: typography.sizes.base,
+    fontWeight: typography.weights.bold,
     color: colors.primary,
   },
   aptBody: {
-    gap: 6,
+    paddingVertical: 4,
   },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  infoCol: {
-    flex: 1,
-  },
-  labelMuted: {
-    fontSize: 8.5,
-    color: colors.textMuted,
-    fontWeight: typography.weights.bold,
-  },
-  boldText: {
-    fontSize: typography.sizes.xs + 0.5,
+  aptDoctorName: {
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.text,
+  },
+  aptClinicSub: {
+    fontSize: typography.sizes.xs,
+    color: colors.textMuted,
     marginTop: 1,
   },
-  subText: {
-    fontSize: 9,
-    color: colors.textSecondary,
-  },
-  slotBanner: {
+  aptSlotRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: colors.surfaceSecondary,
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    borderRadius: 4,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    marginTop: 8,
   },
   slotLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   slotDateText: {
-    fontSize: typography.sizes.xxs,
-    fontWeight: typography.weights.semiBold,
-    color: colors.primaryDeep,
+    fontSize: typography.sizes.xs,
+    color: colors.text,
+    fontWeight: typography.weights.medium,
   },
-  feePaidText: {
-    fontSize: 9,
-    color: colors.secondaryDark,
-    fontWeight: typography.weights.bold,
-  },
-  reasonText: {
-    fontSize: 9.5,
-    color: colors.textMuted,
-    fontStyle: 'italic',
+  patientNameLabel: {
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
   },
   aptActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     marginTop: 8,
-    paddingTop: 6,
+    paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: colors.surfaceSecondary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+    paddingBottom: 24,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  modalTitle: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+    color: colors.text,
+  },
+  modalSub: {
+    fontSize: typography.sizes.xs,
+    color: colors.primary,
+    fontWeight: typography.weights.semiBold,
+    marginTop: 1,
+  },
+  modalCloseBtn: {
+    padding: 4,
+  },
+  modalBody: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  modalDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surfaceSecondary,
+  },
+  modalLabel: {
+    fontSize: typography.sizes.sm,
+    color: colors.textMuted,
+  },
+  modalValue: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    color: colors.text,
+  },
+  modalFooter: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
 });

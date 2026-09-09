@@ -13,19 +13,51 @@ import { typography } from '../theme/typography';
 import { useApp } from '../context/AppContext';
 import { Icon } from '../components/common/Icon';
 import { Badge } from '../components/common/Badge';
+import {
+  LIVEKIT_CONFIG,
+  generateLiveKitToken,
+  getAppointmentRoomName,
+} from '../services/livekitConfig';
+import { LiveKitSetupModal } from '../components/video/LiveKitSetupModal';
+import { LiveKitVideoFeed } from '../components/video/LiveKitVideoFeed';
 
 export const VideoCallModal: React.FC = () => {
   const {
+    activeRole,
     activeVideoAppointment,
     closeVideoCall,
     setActiveTab,
     addPrescription,
   } = useApp();
 
+  const isDoctorRole = activeRole === 'DOCTOR';
+  const otherPartyName = isDoctorRole
+    ? (activeVideoAppointment?.patientName || 'Patient')
+    : (activeVideoAppointment?.doctorName || 'Dr. Ankur Deshwali');
+  const localPartyName = isDoctorRole
+    ? (activeVideoAppointment?.doctorName || 'Dr. Ankur Deshwali')
+    : (activeVideoAppointment?.patientName || 'Patient');
+
   const [seconds, setSeconds] = useState<number>(0);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [isVideoOff, setIsVideoOff] = useState<boolean>(false);
   const [showNotes, setShowNotes] = useState<boolean>(false);
+  const [cameraFacing, setCameraFacing] = useState<'front' | 'back'>('front');
+  const [showLiveKitSetup, setShowLiveKitSetup] = useState<boolean>(false);
+  const [isLiveKitActive, setIsLiveKitActive] = useState<boolean>(LIVEKIT_CONFIG.isConfigured);
+  const [liveKitToken, setLiveKitToken] = useState<string>('');
+
+  useEffect(() => {
+    if (activeVideoAppointment && isLiveKitActive) {
+      const room = getAppointmentRoomName(activeVideoAppointment.id);
+      const participant = localPartyName;
+      generateLiveKitToken(room, participant).then((tok) => {
+        if (tok) {
+          setLiveKitToken(tok);
+        }
+      });
+    }
+  }, [activeVideoAppointment, isLiveKitActive, localPartyName]);
 
   useEffect(() => {
     let timer: any;
@@ -38,7 +70,15 @@ export const VideoCallModal: React.FC = () => {
     return () => clearInterval(timer);
   }, [activeVideoAppointment]);
 
-  if (!activeVideoAppointment) return null;
+  const callEndedHandledRef = React.useRef(false);
+
+  useEffect(() => {
+    callEndedHandledRef.current = false;
+  }, [activeVideoAppointment?.id]);
+
+  if (!activeVideoAppointment || (activeRole !== 'DOCTOR' && activeRole !== 'PATIENT')) {
+    return null;
+  }
 
   const formatTimer = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
@@ -46,12 +86,95 @@ export const VideoCallModal: React.FC = () => {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
+  const handleOtherPartyDisconnected = (disconnectedName: string) => {
+    if (callEndedHandledRef.current || !activeVideoAppointment) return;
+    callEndedHandledRef.current = true;
+
+    if (!isDoctorRole) {
+      // Patient was on mobile and Doctor ended call from laptop
+      addPrescription({
+        id: `rx-tele-${Date.now()}`,
+        appointmentId: activeVideoAppointment.id,
+        patientName: activeVideoAppointment.patientName,
+        patientPhone: activeVideoAppointment.patientPhone,
+        doctorName: activeVideoAppointment.doctorName,
+        doctorSpecialization: 'Pediatric Surgeon (Telemedicine)',
+        clinicName: activeVideoAppointment.clinicName,
+        date: 'Today',
+        diagnosis: 'Telemedicine Clinical Review - Consultation Completed',
+        symptomsRecorded: activeVideoAppointment.symptoms,
+        medications: [
+          {
+            name: 'Syrup Paracetamol (120mg/5ml)',
+            dosage: '5 ml',
+            frequency: 'SOS (Pain/Fever)',
+            duration: '3 Days',
+            instructions: 'After milk or food',
+          },
+          {
+            name: 'Multivitamin Drops / Syrup',
+            dosage: '2.5 ml',
+            frequency: '1-0-0 (Morning)',
+            duration: '15 Days',
+            instructions: 'Daily once after breakfast',
+          },
+        ],
+        advice: 'Follow prescription dosage. Revisit clinic if symptoms persist after 3 days.',
+        followUpDays: 7,
+        followUpDate: '15 Sep 2026',
+        followUpAdvised: true,
+      });
+
+      Alert.alert(
+        'Doctor Ended Call',
+        `${disconnectedName || otherPartyName} has ended the consultation.\n\nYour digital prescription has been signed and added to your records.`,
+        [
+          {
+            text: 'View Prescription',
+            onPress: () => {
+              closeVideoCall();
+              setActiveTab('prescriptions');
+            },
+          },
+          {
+            text: 'Done',
+            style: 'cancel',
+            onPress: () => {
+              closeVideoCall();
+            },
+          },
+        ],
+        { cancelable: false }
+      );
+    } else {
+      // Doctor was on mobile and Patient disconnected
+      Alert.alert(
+        'Patient Left Call',
+        `${disconnectedName || otherPartyName} has disconnected from the room.`,
+        [
+          {
+            text: 'Close OPD Session',
+            onPress: () => closeVideoCall(),
+          },
+        ],
+        { cancelable: false }
+      );
+    }
+  };
+
   const handleEndCall = () => {
+    callEndedHandledRef.current = true;
     Alert.alert(
       'End Telemedicine Consultation',
       'Are you sure you want to end this video session with the doctor?',
       [
-        { text: 'Resume Call', style: 'cancel' },
+        {
+          text: 'Resume Call',
+          style: 'cancel',
+          onPress: () => {
+            callEndedHandledRef.current = false;
+          },
+        },
         {
           text: 'End Consultation',
           style: 'destructive',
@@ -96,7 +219,7 @@ export const VideoCallModal: React.FC = () => {
               'Dr. Ankur Deshwali has signed and generated your Digital Prescription with dosage details.',
               [
                 {
-                  text: 'View Digital Rx',
+                  text: 'View Prescription',
                   onPress: () => setActiveTab('prescriptions'),
                 },
               ]
@@ -115,28 +238,64 @@ export const VideoCallModal: React.FC = () => {
       onRequestClose={handleEndCall}
     >
       <View style={styles.container}>
-        {/* Doctor Video Feed (Main Simulated View) */}
+        {/* LiveKit Real-Time WebRTC Media Feed */}
         <View style={styles.doctorFeed}>
-          {/* Simulated Doctor Avatar & Video Frame */}
-          <View style={styles.doctorVideoFrame}>
-            <View style={styles.doctorAvatarBox}>
-              <Text style={styles.doctorAvatarEmoji}>👨‍⚕️</Text>
-              <View style={styles.speakingIndicator}>
-                <Text style={styles.speakingWave}>● Dr. Ankur Speaking</Text>
+          <LiveKitVideoFeed
+            serverUrl={LIVEKIT_CONFIG.serverUrl}
+            token={liveKitToken}
+            otherPartyName={otherPartyName}
+            localPartyName={localPartyName}
+            isMuted={isMuted}
+            isVideoOff={isVideoOff}
+            cameraFacing={cameraFacing}
+            isDoctorRole={isDoctorRole}
+            onOtherPartyDisconnected={handleOtherPartyDisconnected}
+            renderFallbackAvatar={() => (
+              <View style={styles.doctorVideoFrame}>
+                <View style={styles.doctorAvatarBox}>
+                  <Text style={styles.doctorAvatarEmoji}>
+                    {isDoctorRole ? '👤' : '👨‍⚕️'}
+                  </Text>
+                  <View style={styles.speakingIndicator}>
+                    <Text style={styles.speakingWave}>
+                      ● {isDoctorRole ? 'Waiting for Patient...' : 'Dr. Ankur Speaking'}
+                    </Text>
+                  </View>
+                </View>
               </View>
-            </View>
-          </View>
+            )}
+          />
 
           {/* Top Bar Overlay */}
           <View style={styles.topBar}>
             <View style={styles.docDetails}>
               <Text style={styles.docName}>
-                {activeVideoAppointment.doctorName}
+                {otherPartyName}
               </Text>
               <Text style={styles.docSub}>
                 {activeVideoAppointment.clinicName} • Token #{activeVideoAppointment.tokenNumber}
               </Text>
             </View>
+
+            {/* LiveKit Cloud Status Pill */}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setShowLiveKitSetup(true)}
+              style={[
+                styles.liveKitPill,
+                isLiveKitActive ? styles.liveKitPillActive : styles.liveKitPillSetup,
+              ]}
+            >
+              <View
+                style={[
+                  styles.liveKitDot,
+                  (isLiveKitActive || Boolean(liveKitToken)) && styles.liveKitDotActive,
+                ]}
+              />
+              <Text style={styles.liveKitPillText}>
+                {liveKitToken ? 'LiveKit HD' : isLiveKitActive ? 'LiveKit SFU' : 'LiveKit ⚙️'}
+              </Text>
+            </TouchableOpacity>
 
             <View style={styles.timerBadge}>
               <View style={styles.recordingDot} />
@@ -144,29 +303,29 @@ export const VideoCallModal: React.FC = () => {
             </View>
           </View>
 
-          {/* Patient Inset Preview PIP */}
-          <View style={styles.pipContainer}>
-            {isVideoOff ? (
-              <View style={styles.pipVideoOff}>
-                <Icon name="video-off" size={14} color={colors.white} />
-                <Text style={styles.pipOffText}>Cam Off</Text>
-              </View>
-            ) : (
-              <View style={styles.pipVideoOn}>
-                <Text style={styles.pipPatientEmoji}>👤</Text>
-                <Text style={styles.pipLabel} numberOfLines={1}>
-                  {activeVideoAppointment.patientName} (You)
-                </Text>
-              </View>
-            )}
-          </View>
-
           {/* NMC Telemedicine Compliance Chip */}
           <View style={styles.complianceChip}>
             <Icon name="shield" size={10} color={colors.secondaryDark} />
             <Text style={styles.complianceText}>
-              NMC Telemedicine Verified • End-to-End Encrypted HD
+              LiveKit Sevaarogyam • NMC Verified • E2EE Encrypted HD
             </Text>
+          </View>
+
+          {/* Local PiP (Picture in Picture) Camera Preview */}
+          <View style={styles.pipContainer}>
+            {isVideoOff ? (
+              <View style={styles.pipVideoOff}>
+                <Icon name="video-off" size={20} color={colors.textLight} />
+                <Text style={styles.pipOffText}>Cam Off</Text>
+              </View>
+            ) : (
+              <View style={styles.pipVideoOn}>
+                <Text style={styles.pipPatientEmoji}>
+                  {isDoctorRole ? '👨‍⚕️' : '👤'}
+                </Text>
+                <Text style={styles.pipLabel}>You (HD)</Text>
+              </View>
+            )}
           </View>
 
           {/* Doctor Live Clinical Notes Inset */}
@@ -181,7 +340,7 @@ export const VideoCallModal: React.FC = () => {
               <Text style={styles.notesBody}>
                 "Child's wound incision is well-healed. Mild redness is expected. Advised to continue oral hydration and finish the 3-day course. Schedule in-clinic checkup next week."
               </Text>
-              <Badge label="Auto-Adding to Digital Rx" variant="success" size="sm" />
+              <Badge label="Added to Prescription" variant="success" size="sm" />
             </View>
           )}
         </View>
@@ -216,6 +375,17 @@ export const VideoCallModal: React.FC = () => {
 
           <TouchableOpacity
             activeOpacity={0.8}
+            onPress={() => setCameraFacing((prev) => (prev === 'front' ? 'back' : 'front'))}
+            style={styles.controlBtn}
+          >
+            <Icon name="switch-camera" size={18} color={colors.text} />
+            <Text style={styles.controlLabel}>
+              {cameraFacing === 'front' ? 'Rear Cam' : 'Front Cam'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
             onPress={() => setShowNotes(!showNotes)}
             style={[styles.controlBtn, showNotes && styles.controlBtnActive]}
           >
@@ -236,6 +406,13 @@ export const VideoCallModal: React.FC = () => {
             <Text style={styles.endCallLabel}>End</Text>
           </TouchableOpacity>
         </View>
+
+        {/* LiveKit Setup Modal */}
+        <LiveKitSetupModal
+          visible={showLiveKitSetup}
+          onClose={() => setShowLiveKitSetup(false)}
+          onConfigSaved={() => setIsLiveKitActive(LIVEKIT_CONFIG.isConfigured)}
+        />
       </View>
     </Modal>
   );
@@ -312,6 +489,39 @@ const styles = StyleSheet.create({
     color: colors.primaryLight,
     fontSize: typography.sizes.xxs,
     marginTop: 1,
+  },
+  liveKitPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 999,
+    marginRight: 6,
+    gap: 4,
+  },
+  liveKitPillActive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    borderWidth: 1,
+    borderColor: colors.success,
+  },
+  liveKitPillSetup: {
+    backgroundColor: 'rgba(56, 189, 248, 0.2)',
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
+  liveKitDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.accent,
+  },
+  liveKitDotActive: {
+    backgroundColor: colors.success,
+  },
+  liveKitPillText: {
+    fontSize: typography.sizes.xxs,
+    fontWeight: typography.weights.bold,
+    color: colors.white,
   },
   timerBadge: {
     flexDirection: 'row',

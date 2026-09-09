@@ -19,7 +19,7 @@ import { CompactCard } from '../components/common/CompactCard';
 import { Button } from '../components/common/Button';
 
 export const ClinicsScreen: React.FC = () => {
-  const { queueStatuses, openBookingModal } = useApp();
+  const { activeRole, queueStatuses, openBookingModal } = useApp();
 
   const handleCall = (phone: string, branchName: string) => {
     Alert.alert(`Call ${branchName}`, `Dial ${phone}?`, [
@@ -50,9 +50,9 @@ export const ClinicsScreen: React.FC = () => {
     >
       <View style={styles.headerBar}>
         <View>
-          <Text style={styles.headerTitle}>SEVASADAN 4 Clinic Branches</Text>
+          <Text style={styles.headerTitle}>Hospital Clinic Network</Text>
           <Text style={styles.headerSub}>
-            OPD centers across Rajgarh District, Madhya Pradesh
+            4 equipped OPD centers in Rajgarh District, MP
           </Text>
         </View>
         <Badge label="4 Centers" variant="primary" size="sm" />
@@ -65,41 +65,35 @@ export const ClinicsScreen: React.FC = () => {
         );
 
         return (
-          <CompactCard
-            key={clinic.id}
-            style={styles.clinicCard}
-            borderAccent={colors.primary}
-          >
+          <CompactCard key={clinic.id} style={styles.clinicCard}>
             {/* Header: Name, City & Rating */}
             <View style={styles.cardHeader}>
               <View style={styles.headerTextCol}>
-                <Text style={styles.clinicFullName}>{clinic.fullName}</Text>
-                <Text style={styles.branchName}>{clinic.name}</Text>
+                <Text style={styles.branchName}>{clinic.fullName}</Text>
+                <Text style={styles.cityName}>{clinic.city}, Madhya Pradesh</Text>
               </View>
               <View style={styles.ratingBadge}>
-                <Icon name="star" size={10} color={colors.warning} />
+                <Icon name="star" size={12} color={colors.warning} />
                 <Text style={styles.ratingText}>{clinic.rating}</Text>
               </View>
             </View>
 
-            <View style={styles.divider} />
-
             {/* Address & Hours */}
             <View style={styles.metaSection}>
               <View style={styles.metaRow}>
-                <Icon name="location" size={12} color={colors.primary} />
+                <Icon name="location" size={13} color={colors.primary} />
                 <Text style={styles.addressText}>{clinic.address}</Text>
               </View>
 
               <View style={styles.metaRow}>
-                <Icon name="clock" size={12} color={colors.secondaryDark} />
+                <Icon name="clock" size={13} color={colors.secondaryDark} />
                 <Text style={styles.metaText}>{clinic.operatingHours}</Text>
               </View>
 
               <View style={styles.metaRow}>
-                <Icon name="phone" size={12} color={colors.textSecondary} />
+                <Icon name="phone" size={13} color={colors.textSecondary} />
                 <Text style={styles.metaText}>
-                  Landline: {clinic.phone} • Emergency: {clinic.emergencyHelpline}
+                  Phone: {clinic.phone} • Helpline: {clinic.emergencyHelpline}
                 </Text>
               </View>
             </View>
@@ -146,7 +140,7 @@ export const ClinicsScreen: React.FC = () => {
             {/* Branch Actions */}
             <View style={styles.actionsRow}>
               <Button
-                title="Call Branch"
+                title="Call"
                 onPress={() => handleCall(clinic.phone, clinic.name)}
                 variant="outline"
                 size="sm"
@@ -161,19 +155,21 @@ export const ClinicsScreen: React.FC = () => {
                 icon="location"
                 style={{ flex: 1 }}
               />
-              <Button
-                title="Book Token"
-                onPress={() =>
-                  openBookingModal({
-                    clinicId: clinic.id,
-                    consultationMode: 'IN_CLINIC',
-                  })
-                }
-                variant="primary"
-                size="sm"
-                icon="token"
-                style={{ flex: 1.2 }}
-              />
+              {activeRole === 'PATIENT' && (
+                <Button
+                  title="Book Token"
+                  onPress={() =>
+                    openBookingModal({
+                      clinicId: clinic.id,
+                      consultationMode: 'IN_CLINIC',
+                    })
+                  }
+                  variant="primary"
+                  size="sm"
+                  icon="token"
+                  style={{ flex: 1.2 }}
+                />
+              )}
             </View>
           </CompactCard>
         );
@@ -189,154 +185,150 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: spacing.screenPaddingHorizontal,
-    paddingTop: 8,
-    paddingBottom: 24,
+    paddingTop: 10,
+    paddingBottom: 28,
   },
   headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   headerTitle: {
-    fontSize: typography.sizes.sm + 1,
+    fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
   headerSub: {
-    fontSize: typography.sizes.xxs,
+    fontSize: typography.sizes.xs,
     color: colors.textMuted,
     marginTop: 1,
   },
   clinicCard: {
-    marginBottom: 8,
+    marginBottom: 10,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    marginBottom: 8,
   },
   headerTextCol: {
     flex: 1,
-    paddingRight: 6,
-  },
-  clinicFullName: {
-    fontSize: 8.5,
-    fontWeight: typography.weights.bold,
-    color: colors.primary,
-    textTransform: 'uppercase',
+    paddingRight: 8,
   },
   branchName: {
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.text,
-    marginTop: 1,
+  },
+  cityName: {
+    fontSize: typography.sizes.xs,
+    color: colors.textMuted,
+    marginTop: 2,
   },
   ratingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    backgroundColor: '#FEF3C7',
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: 4,
+    gap: 4,
+    backgroundColor: colors.surfaceSecondary,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 6,
   },
   ratingText: {
-    fontSize: typography.sizes.xxs,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.bold,
-    color: '#92400E',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.surfaceSecondary,
-    marginVertical: 6,
+    color: colors.text,
   },
   metaSection: {
-    gap: 4,
+    gap: 6,
+    paddingVertical: 6,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceSecondary,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 6,
+    gap: 8,
   },
   addressText: {
-    fontSize: typography.sizes.xxs + 0.5,
+    fontSize: typography.sizes.xs,
     color: colors.textSecondary,
     flex: 1,
-    lineHeight: 13,
+    lineHeight: 16,
   },
   metaText: {
-    fontSize: typography.sizes.xxs,
+    fontSize: typography.sizes.xs,
     color: colors.textMuted,
     flex: 1,
   },
   queueBox: {
     flexDirection: 'row',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.surfaceSecondary,
     borderRadius: spacing.borderRadiusSm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: 6,
+    paddingVertical: 8,
     paddingHorizontal: 10,
     alignItems: 'center',
-    marginVertical: 6,
+    marginVertical: 8,
   },
   queueItem: {
     flex: 1,
     alignItems: 'center',
   },
   queueLabel: {
-    fontSize: 8,
+    fontSize: typography.sizes.xxs,
     color: colors.textMuted,
     fontWeight: typography.weights.bold,
   },
   queueValue: {
-    fontSize: typography.sizes.sm + 1,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.extraBold,
     color: colors.primary,
-    marginTop: 1,
+    marginTop: 2,
   },
   queueValueSub: {
-    fontSize: typography.sizes.xxs + 0.5,
-    fontWeight: typography.weights.semiBold,
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.medium,
     color: colors.text,
-    marginTop: 1,
+    marginTop: 2,
   },
   queueSep: {
     width: 1,
-    height: 20,
-    backgroundColor: colors.borderDark,
+    height: 24,
+    backgroundColor: colors.border,
   },
   docsSection: {
     marginTop: 4,
+    marginBottom: 8,
   },
   docsHeading: {
-    fontSize: 8.5,
+    fontSize: typography.sizes.xxs,
     fontWeight: typography.weights.bold,
     color: colors.textMuted,
-    marginBottom: 3,
+    marginBottom: 4,
   },
   docTagsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 4,
+    gap: 6,
   },
   docTag: {
     backgroundColor: colors.primaryLight,
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: 4,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 6,
   },
   docTagText: {
-    fontSize: 8.5,
+    fontSize: typography.sizes.xxs,
     color: colors.primaryDeep,
     fontWeight: typography.weights.semiBold,
   },
   actionsRow: {
     flexDirection: 'row',
-    gap: 6,
-    marginTop: 8,
-    paddingTop: 6,
+    gap: 8,
+    marginTop: 6,
+    paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: colors.surfaceSecondary,
   },

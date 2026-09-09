@@ -1,14 +1,14 @@
 export const typography = {
   sizes: {
-    xxs: 10,
-    xs: 11,
-    sm: 12,
-    md: 13,
-    base: 14,
+    xxs: 11,
+    xs: 12,
+    sm: 13,
+    md: 14,
+    base: 15,
     lg: 16,
     xl: 18,
-    xxl: 22,
-    huge: 26,
+    xxl: 20,
+    huge: 24,
   },
   weights: {
     regular: '400' as const,
@@ -18,10 +18,10 @@ export const typography = {
     extraBold: '800' as const,
   },
   lineHeights: {
-    tight: 14,
-    normal: 18,
-    relaxed: 22,
-    title: 26,
+    tight: 16,
+    normal: 20,
+    relaxed: 24,
+    title: 28,
   },
 };
 

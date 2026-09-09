@@ -18,7 +18,6 @@ import { CLINICS } from '../../data/clinics';
 export const Header: React.FC = () => {
   const {
     activeRole,
-    openRoleSwitcher,
     selectedBranchId,
     setSelectedBranchId,
     activeDeskBranchId,
@@ -61,7 +60,7 @@ export const Header: React.FC = () => {
         return { label: 'Hospital Admin', icon: '🛡️', bg: '#EDE9FE', text: '#5B21B6' };
       case 'PATIENT':
       default:
-        return { label: 'Patient Mode', icon: '👤', bg: '#E0F2FE', text: '#0369A1' };
+        return null;
     }
   };
 
@@ -94,19 +93,16 @@ export const Header: React.FC = () => {
           </View>
         </View>
 
-        {/* Role Switcher Pill & Emergency */}
+        {/* Actions Row */}
         <View style={styles.actionsRow}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={openRoleSwitcher}
-            style={[styles.roleSwitchBtn, { backgroundColor: roleInfo.bg }]}
-          >
-            <Text style={styles.roleIcon}>{roleInfo.icon}</Text>
-            <Text style={[styles.roleLabelText, { color: roleInfo.text }]}>
-              {roleInfo.label}
-            </Text>
-            <Text style={[styles.arrowDown, { color: roleInfo.text }]}>▾</Text>
-          </TouchableOpacity>
+          {roleInfo && (
+            <View style={[styles.roleBadge, { backgroundColor: roleInfo.bg }]}>
+              <Text style={styles.roleIcon}>{roleInfo.icon}</Text>
+              <Text style={[styles.roleLabelText, { color: roleInfo.text }]}>
+                {roleInfo.label}
+              </Text>
+            </View>
+          )}
 
           <TouchableOpacity
             activeOpacity={0.8}
@@ -326,7 +322,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
   },
-  roleSwitchBtn: {
+  roleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 3,
@@ -339,10 +335,6 @@ const styles = StyleSheet.create({
   },
   roleLabelText: {
     fontSize: typography.sizes.xxs,
-    fontWeight: typography.weights.bold,
-  },
-  arrowDown: {
-    fontSize: 9,
     fontWeight: typography.weights.bold,
   },
   logoutBtn: {

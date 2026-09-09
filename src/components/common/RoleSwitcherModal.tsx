@@ -35,7 +35,7 @@ export const RoleSwitcherModal: React.FC = () => {
     {
       key: 'PATIENT',
       title: 'Patient Portal',
-      tagline: 'Book OPD tokens, video consults, track live queue & Rx',
+      tagline: 'Book OPD tokens, video consults, track live queue & prescriptions',
       badge: 'Public App',
       icon: '👤',
       color: colors.primary,
@@ -44,7 +44,7 @@ export const RoleSwitcherModal: React.FC = () => {
     {
       key: 'DOCTOR',
       title: 'Doctor Portal (Dr. Ankur Deshwali)',
-      tagline: 'Live OPD queue, call next patient, write digital Rx & video OPD',
+      tagline: 'Live OPD queue, call next patient, write digital prescriptions & video OPD',
       badge: 'Chief Surgeon',
       icon: '🩺',
       color: colors.secondaryDark,

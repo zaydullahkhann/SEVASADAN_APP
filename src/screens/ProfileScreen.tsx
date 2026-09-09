@@ -19,6 +19,13 @@ import { Button } from '../components/common/Button';
 
 export const ProfileScreen: React.FC = () => {
   const {
+    activeRole,
+    activeDoctorId,
+    doctors,
+    setDoctorDuty,
+    activeDeskBranchId,
+    queueStatuses,
+    deskRegisters,
     currentUserPhone,
     setCurrentUserPhone,
     appointments,
@@ -27,6 +34,8 @@ export const ProfileScreen: React.FC = () => {
     logout,
   } = useApp();
 
+  const currentDoctor =
+    doctors.find((d) => d.id === activeDoctorId) || doctors[0];
   const currentPatient =
     REGISTERED_PATIENTS.find((p) => p.phone === currentUserPhone) ||
     REGISTERED_PATIENTS[0];
@@ -38,6 +47,340 @@ export const ProfileScreen: React.FC = () => {
     (p) => p.patientPhone === currentUserPhone
   );
 
+  const docAppointments = appointments.filter(
+    (a) =>
+      a.doctorId === activeDoctorId ||
+      a.doctorName.toLowerCase().includes('ankur')
+  );
+  const docPrescriptions = prescriptions.filter(
+    (p) =>
+      p.doctorId === activeDoctorId ||
+      p.doctorName.toLowerCase().includes('ankur')
+  );
+
+  const deskRegister = deskRegisters[activeDeskBranchId || 'sarangpur'];
+  const deskQueue = queueStatuses[activeDeskBranchId || 'sarangpur'];
+
+  const handleSignOut = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign Out', style: 'destructive', onPress: logout },
+    ]);
+  };
+
+  // 1. DOCTOR PROFILE VIEW
+  if (activeRole === 'DOCTOR') {
+    return (
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <CompactCard style={styles.profileCard}>
+          <View style={styles.profileRow}>
+            <View style={styles.avatarBox}>
+              <Text style={styles.avatarEmoji}>👨‍⚕️</Text>
+            </View>
+            <View style={styles.profileDetails}>
+              <View style={styles.nameRow}>
+                <Text style={styles.patientName}>{currentDoctor.name}</Text>
+                <Badge label="Chief Surgeon" variant="success" size="sm" />
+              </View>
+              <Text style={styles.docSpecialtyText}>
+                {currentDoctor.specialization}
+              </Text>
+              <Text style={styles.docMetaText}>
+                Reg #MP-19482 • 15+ Yrs Surgical Specialist
+              </Text>
+            </View>
+          </View>
+
+          {/* Stats */}
+          <View style={styles.statsBar}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{docAppointments.length}</Text>
+              <Text style={styles.statLabel}>OPD Visits</Text>
+            </View>
+            <View style={styles.statSep} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{docPrescriptions.length}</Text>
+              <Text style={styles.statLabel}>Signed Prescriptions</Text>
+            </View>
+            <View style={styles.statSep} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: colors.warning }]}>
+                4.9 ★
+              </Text>
+              <Text style={styles.statLabel}>Patient Rating</Text>
+            </View>
+          </View>
+        </CompactCard>
+
+        {/* Doctor Duty Status Card */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Duty & OPD Availability</Text>
+          <Text style={styles.sectionSub}>Manage your active OPD and OT status</Text>
+        </View>
+
+        <CompactCard style={styles.deskCard}>
+          <View style={styles.dutyRow}>
+            <View style={{ flex: 1, paddingRight: 10 }}>
+              <Text style={styles.deskTitle}>Consultation Status</Text>
+              <Text style={styles.dutyStatusSub}>
+                {currentDoctor.dutyStatus === 'AVAILABLE'
+                  ? '🟢 Available in OPD (Accepting Patients & Calls)'
+                  : '🔴 In Operation Theatre (OT / Surgery Session)'}
+              </Text>
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() =>
+                setDoctorDuty(
+                  currentDoctor.id,
+                  currentDoctor.dutyStatus === 'AVAILABLE'
+                    ? 'IN_SURGERY'
+                    : 'AVAILABLE'
+                )
+              }
+              style={[
+                styles.dutyToggleBtn,
+                currentDoctor.dutyStatus === 'AVAILABLE'
+                  ? styles.dutyBtnActive
+                  : styles.dutyBtnInactive,
+              ]}
+            >
+              <Text style={styles.dutyToggleText}>
+                {currentDoctor.dutyStatus === 'AVAILABLE'
+                  ? 'Set to OT'
+                  : 'Set Available'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </CompactCard>
+
+        {/* Assigned Hospital Branches */}
+        <View style={[styles.sectionHeader, { marginTop: 10 }]}>
+          <Text style={styles.sectionTitle}>Assigned Centers & Timings</Text>
+        </View>
+
+        <CompactCard style={styles.infoCard}>
+          <Text style={styles.infoTitle}>Sarangpur & Rajgarh District OPD</Text>
+          <Text style={styles.infoDesc}>
+            Primary Base: Sarangpur Super Specialty Clinic (Mon - Sat: 09:00 AM - 02:00 PM)
+            {'\n'}Surgical OT Hours: Daily 02:30 PM - 05:00 PM
+            {'\n'}Telemedicine Video OPD: 06:00 PM - 08:30 PM
+          </Text>
+          <View style={styles.accreditRow}>
+            <Badge label="NMC Certified" variant="success" size="sm" />
+            <Badge label="Class-I Gazetted" variant="accent" size="sm" />
+            <Badge label="3× MPPSC Selected" variant="primary" size="sm" />
+          </View>
+        </CompactCard>
+
+        {/* Logout */}
+        <Button
+          title="Sign Out Doctor Account"
+          onPress={handleSignOut}
+          variant="outline"
+          size="md"
+          icon="close"
+          fullWidth
+          style={{ marginTop: 14, borderColor: colors.danger }}
+          textStyle={{ color: colors.danger }}
+        />
+
+        <View style={styles.versionFooter}>
+          <Text style={styles.versionText}>
+            SEVASADAN Doctor Portal • Dr. Ankur Deshwali
+          </Text>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  // 2. FRONT DESK PROFILE VIEW
+  if (activeRole === 'FRONT_DESK') {
+    return (
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <CompactCard style={styles.profileCard}>
+          <View style={styles.profileRow}>
+            <View style={styles.avatarBox}>
+              <Text style={styles.avatarEmoji}>🖥️</Text>
+            </View>
+            <View style={styles.profileDetails}>
+              <View style={styles.nameRow}>
+                <Text style={styles.patientName}>Pooja Verma</Text>
+                <Badge label="Front Desk" variant="accent" size="sm" />
+              </View>
+              <Text style={styles.docSpecialtyText}>
+                OPD Reception & Token Counter
+              </Text>
+              <Text style={styles.docMetaText}>
+                Staff ID: FD-7041 • Sarangpur Main Desk
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.statsBar}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {deskQueue?.totalIssuedToday || 28}
+              </Text>
+              <Text style={styles.statLabel}>Tokens Issued</Text>
+            </View>
+            <View style={styles.statSep} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: colors.secondaryDark }]}>
+                ₹{deskRegister?.cashCollected || 6400}
+              </Text>
+              <Text style={styles.statLabel}>Cash Collected</Text>
+            </View>
+            <View style={styles.statSep} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>Active</Text>
+              <Text style={styles.statLabel}>Counter 1</Text>
+            </View>
+          </View>
+        </CompactCard>
+
+        {/* Walk-In Quick Launcher */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Walk-In Patient Registration</Text>
+          <Text style={styles.sectionSub}>Allot physical tokens and register arrivals</Text>
+        </View>
+
+        <CompactCard style={styles.deskCard}>
+          <View style={styles.deskRow}>
+            <View style={styles.deskIconCircle}>
+              <Icon name="token" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.deskInfo}>
+              <Text style={styles.deskTitle}>Allot Walk-In OPD Token</Text>
+              <Text style={styles.deskDesc}>
+                Register patient details, issue token pass slip, and collect counter fee.
+              </Text>
+            </View>
+          </View>
+          <Button
+            title="Issue Walk-In Token"
+            onPress={openWalkInModal}
+            variant="primary"
+            size="sm"
+            icon="token"
+            fullWidth
+            style={{ marginTop: 10 }}
+          />
+        </CompactCard>
+
+        {/* Logout */}
+        <Button
+          title="Sign Out Front Desk"
+          onPress={handleSignOut}
+          variant="outline"
+          size="md"
+          icon="close"
+          fullWidth
+          style={{ marginTop: 14, borderColor: colors.danger }}
+          textStyle={{ color: colors.danger }}
+        />
+
+        <View style={styles.versionFooter}>
+          <Text style={styles.versionText}>
+            SEVASADAN Front Desk Portal • Sarangpur
+          </Text>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  // 3. ADMIN PROFILE VIEW
+  if (activeRole === 'ADMIN') {
+    return (
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <CompactCard style={styles.profileCard}>
+          <View style={styles.profileRow}>
+            <View style={styles.avatarBox}>
+              <Text style={styles.avatarEmoji}>🛡️</Text>
+            </View>
+            <View style={styles.profileDetails}>
+              <View style={styles.nameRow}>
+                <Text style={styles.patientName}>Hospital Administration</Text>
+                <Badge label="Super Admin" variant="primary" size="sm" />
+              </View>
+              <Text style={styles.docSpecialtyText}>
+                Executive Medical Network Controller
+              </Text>
+              <Text style={styles.docMetaText}>
+                SEVASADAN Health Network • All 4 Branches Active
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.statsBar}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>4</Text>
+              <Text style={styles.statLabel}>Centers</Text>
+            </View>
+            <View style={styles.statSep} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{doctors.length}</Text>
+              <Text style={styles.statLabel}>Doctors</Text>
+            </View>
+            <View style={styles.statSep} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{appointments.length}</Text>
+              <Text style={styles.statLabel}>Total OPDs</Text>
+            </View>
+          </View>
+        </CompactCard>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Hospital Compliance & Systems</Text>
+          <Text style={styles.sectionSub}>Network architecture and tele-OPD infrastructure</Text>
+        </View>
+
+        <CompactCard style={styles.infoCard}>
+          <Text style={styles.infoTitle}>SEVASADAN Super Specialty Network</Text>
+          <Text style={styles.infoDesc}>
+            Centralized hospital administration for Sarangpur, Shujalpur, Rajgarh, and Biaora OPD branches. Telemedicine integration secured via LiveKit WebRTC Cloud.
+          </Text>
+          <View style={styles.accreditRow}>
+            <Badge label="NMC Certified" variant="success" size="sm" />
+            <Badge label="ISO 9001:2015" variant="accent" size="sm" />
+            <Badge label="LiveKit Cloud Tele-OPD" variant="primary" size="sm" />
+          </View>
+        </CompactCard>
+
+        {/* Logout */}
+        <Button
+          title="Sign Out Admin Account"
+          onPress={handleSignOut}
+          variant="outline"
+          size="md"
+          icon="close"
+          fullWidth
+          style={{ marginTop: 14, borderColor: colors.danger }}
+          textStyle={{ color: colors.danger }}
+        />
+
+        <View style={styles.versionFooter}>
+          <Text style={styles.versionText}>
+            SEVASADAN Executive Administration Panel
+          </Text>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  // 4. PATIENT PROFILE VIEW (Default)
   return (
     <ScrollView
       style={styles.container}
@@ -45,7 +388,7 @@ export const ProfileScreen: React.FC = () => {
       showsVerticalScrollIndicator={false}
     >
       {/* Patient Profile Card */}
-      <CompactCard style={styles.profileCard} borderAccent={colors.primary}>
+      <CompactCard style={styles.profileCard}>
         <View style={styles.profileRow}>
           <View style={styles.avatarBox}>
             <Text style={styles.avatarEmoji}>
@@ -72,7 +415,7 @@ export const ProfileScreen: React.FC = () => {
           <View style={styles.statSep} />
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>{userPrescriptions.length}</Text>
-            <Text style={styles.statLabel}>Digital Rx</Text>
+            <Text style={styles.statLabel}>Prescriptions</Text>
           </View>
           <View style={styles.statSep} />
           <View style={styles.statItem}>
@@ -82,10 +425,10 @@ export const ProfileScreen: React.FC = () => {
         </View>
       </CompactCard>
 
-      {/* Journey 3: Existing Patient Switcher Simulation */}
+      {/* Switch Patient Profile (Testing Simulation) */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>
-          Switch Patient Profile (Journey 3 Test)
+          Switch Patient Profile
         </Text>
         <Text style={styles.sectionSub}>
           Simulate returning registered patients with existing records
@@ -126,44 +469,15 @@ export const ProfileScreen: React.FC = () => {
         })}
       </View>
 
-      {/* Staff Reception Desk Quick Mode */}
-      <View style={[styles.sectionHeader, { marginTop: 10 }]}>
-        <Text style={styles.sectionTitle}>Clinic Reception & OPD Staff Desk</Text>
-        <Text style={styles.sectionSub}>Staff desk token generator (Journey 5)</Text>
-      </View>
-
-      <CompactCard style={styles.deskCard}>
-        <View style={styles.deskRow}>
-          <View style={styles.deskIconCircle}>
-            <Icon name="token" size={20} color={colors.primary} />
-          </View>
-          <View style={styles.deskInfo}>
-            <Text style={styles.deskTitle}>Walk-In Token Desk Mode</Text>
-            <Text style={styles.deskDesc}>
-              Enter walk-in patients on arrival, allot instant physical tokens & record cash payment.
-            </Text>
-          </View>
-        </View>
-        <Button
-          title="Open Walk-In Token Desk"
-          onPress={openWalkInModal}
-          variant="outline"
-          size="sm"
-          icon="token"
-          fullWidth
-          style={{ marginTop: 8 }}
-        />
-      </CompactCard>
-
       {/* App & Medical Accreditation Info */}
-      <View style={[styles.sectionHeader, { marginTop: 10 }]}>
+      <View style={[styles.sectionHeader, { marginTop: 12 }]}>
         <Text style={styles.sectionTitle}>About SEVASADAN Health Network</Text>
       </View>
 
       <CompactCard style={styles.infoCard}>
         <Text style={styles.infoTitle}>Dr. Ankur Deshwali & Specialist Network</Text>
         <Text style={styles.infoDesc}>
-          SEVASADAN Super Specialty OPD & Telemedicine Network is led by Dr. Ankur Deshwali (MBBS, MS, MCh Pediatric Surgery), a 3× MPPSC selected Class-I Gazetted Surgical Specialist. We provide high-quality in-clinic surgical care, pediatric interventions, general medicine, and telemedicine consultations across Madhya Pradesh.
+          SEVASADAN Super Specialty OPD & Telemedicine Network is led by Dr. Ankur Deshwali (MBBS, MS, MCh Pediatric Surgery), a 3× MPPSC selected Class-I Gazetted Surgical Specialist. Providing high-quality in-clinic surgical care, pediatric interventions, and telemedicine across Madhya Pradesh.
         </Text>
         <View style={styles.accreditRow}>
           <Badge label="NMC Compliant" variant="success" size="sm" />
@@ -174,18 +488,13 @@ export const ProfileScreen: React.FC = () => {
 
       {/* Logout Action Button */}
       <Button
-        title="Log Out of Account"
-        onPress={() => {
-          Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Sign Out', style: 'destructive', onPress: logout },
-          ]);
-        }}
+        title="Sign Out of Account"
+        onPress={handleSignOut}
         variant="outline"
         size="md"
         icon="close"
         fullWidth
-        style={{ marginTop: 12, borderColor: colors.danger }}
+        style={{ marginTop: 14, borderColor: colors.danger }}
         textStyle={{ color: colors.danger }}
       />
 
@@ -204,27 +513,27 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: spacing.screenPaddingHorizontal,
-    paddingTop: 8,
-    paddingBottom: 24,
+    paddingTop: 10,
+    paddingBottom: 28,
   },
   profileCard: {
-    marginBottom: 8,
+    marginBottom: 10,
   },
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
   avatarBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarEmoji: {
-    fontSize: 24,
+    fontSize: 26,
   },
   profileDetails: {
     flex: 1,
@@ -232,21 +541,32 @@ const styles = StyleSheet.create({
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   patientName: {
-    fontSize: typography.sizes.sm + 1,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
-  patientPhone: {
-    fontSize: typography.sizes.xxs + 1,
+  docSpecialtyText: {
+    fontSize: typography.sizes.xs,
     color: colors.primary,
-    fontWeight: typography.weights.semiBold,
+    fontWeight: typography.weights.bold,
+    marginTop: 1,
+  },
+  docMetaText: {
+    fontSize: typography.sizes.xxs,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  patientPhone: {
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
+    fontWeight: typography.weights.medium,
     marginTop: 1,
   },
   patientMeta: {
-    fontSize: 9,
+    fontSize: typography.sizes.xxs,
     color: colors.textMuted,
     marginTop: 1,
   },
@@ -256,80 +576,79 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     backgroundColor: colors.surfaceSecondary,
     borderRadius: spacing.borderRadiusSm,
-    paddingVertical: 6,
-    marginTop: 8,
+    paddingVertical: 8,
+    marginTop: 10,
   },
   statItem: {
     alignItems: 'center',
   },
   statNumber: {
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.primary,
   },
   statLabel: {
-    fontSize: 8.5,
-    color: colors.textMuted,
-  },
-  statSep: {
-    width: 1,
-    height: 18,
-    backgroundColor: colors.borderDark,
-  },
-  sectionHeader: {
-    marginTop: 8,
-    marginBottom: 6,
-  },
-  sectionTitle: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
-    color: colors.text,
-  },
-  sectionSub: {
-    fontSize: typography.sizes.xxs,
-    color: colors.textMuted,
-    marginTop: 1,
-  },
-  patientSwitcherGrid: {
-    gap: 6,
-  },
-  switchCard: {
-    backgroundColor: colors.white,
-    borderRadius: spacing.borderRadiusSm + 2,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    padding: 8,
-  },
-  switchCardActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
-  },
-  switchTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  switchName: {
-    fontSize: typography.sizes.xs + 0.5,
-    fontWeight: typography.weights.bold,
-    color: colors.text,
-  },
-  switchNameActive: {
-    color: colors.primary,
-  },
-  switchSub: {
     fontSize: typography.sizes.xxs,
     color: colors.textMuted,
     marginTop: 2,
   },
+  statSep: {
+    width: 1,
+    height: 20,
+    backgroundColor: colors.border,
+  },
+  sectionHeader: {
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: typography.sizes.base,
+    fontWeight: typography.weights.bold,
+    color: colors.text,
+  },
+  sectionSub: {
+    fontSize: typography.sizes.xs,
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+  dutyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  dutyStatusSub: {
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
+    marginTop: 3,
+  },
+  dutyToggleBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  dutyBtnActive: {
+    backgroundColor: '#D1FAE5',
+    borderWidth: 1,
+    borderColor: '#10B981',
+  },
+  dutyBtnInactive: {
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#EF4444',
+  },
+  dutyToggleText: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.bold,
+    color: colors.text,
+  },
   deskCard: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#CBD5E1',
+    marginBottom: 10,
   },
   deskRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   deskIconCircle: {
     width: 36,
@@ -343,47 +662,83 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   deskTitle: {
-    fontSize: typography.sizes.xs + 1,
+    fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
   deskDesc: {
-    fontSize: typography.sizes.xxs,
+    fontSize: typography.sizes.xs,
     color: colors.textMuted,
-    marginTop: 1,
-    lineHeight: 12,
+    marginTop: 2,
+    lineHeight: 16,
   },
-  infoCard: {
-    backgroundColor: colors.white,
+  patientSwitcherGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 10,
   },
-  infoTitle: {
-    fontSize: typography.sizes.xs + 1,
+  switchCard: {
+    width: '48.5%',
+    backgroundColor: colors.surface,
+    borderRadius: spacing.borderRadiusSm,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  switchCardActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.surfaceSecondary,
+  },
+  switchTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 3,
+  },
+  switchName: {
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.bold,
+    color: colors.text,
+  },
+  switchNameActive: {
     color: colors.primary,
   },
+  switchSub: {
+    fontSize: typography.sizes.xxs,
+    color: colors.textMuted,
+  },
+  infoCard: {
+    marginBottom: 10,
+  },
+  infoTitle: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.bold,
+    color: colors.text,
+    marginBottom: 4,
+  },
   infoDesc: {
-    fontSize: typography.sizes.xxs + 0.5,
+    fontSize: typography.sizes.xs,
     color: colors.textSecondary,
-    marginTop: 4,
-    lineHeight: 14,
+    lineHeight: 18,
+    marginBottom: 8,
   },
   accreditRow: {
     flexDirection: 'row',
     gap: 6,
-    marginTop: 8,
+    flexWrap: 'wrap',
   },
   versionFooter: {
     alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: 14,
+    marginBottom: 20,
   },
   versionText: {
-    fontSize: 9,
+    fontSize: typography.sizes.xs,
     color: colors.textMuted,
-    fontWeight: typography.weights.medium,
   },
   copyText: {
-    fontSize: 8.5,
+    fontSize: typography.sizes.xxs,
     color: colors.textLight,
     marginTop: 2,
   },
