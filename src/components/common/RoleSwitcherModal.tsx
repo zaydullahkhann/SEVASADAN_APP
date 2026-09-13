@@ -11,7 +11,7 @@ import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { UserRole } from '../../types';
 import { useApp } from '../../context/AppContext';
-import { Icon } from './Icon';
+import { Icon, IconName } from './Icon';
 import { Badge } from './Badge';
 
 export const RoleSwitcherModal: React.FC = () => {
@@ -28,7 +28,7 @@ export const RoleSwitcherModal: React.FC = () => {
     title: string;
     tagline: string;
     badge: string;
-    icon: string;
+    icon: IconName;
     color: string;
     bg: string;
   }[] = [
@@ -37,25 +37,25 @@ export const RoleSwitcherModal: React.FC = () => {
       title: 'Patient Portal',
       tagline: 'Book OPD tokens, video consults, track live queue & prescriptions',
       badge: 'Public App',
-      icon: '👤',
+      icon: 'user',
       color: colors.primary,
-      bg: colors.primaryLight,
+      bg: '#E0F2FE',
     },
     {
       key: 'DOCTOR',
       title: 'Doctor Portal (Dr. Ankur Deshwali)',
       tagline: 'Live OPD queue, call next patient, write digital prescriptions & video OPD',
       badge: 'Chief Surgeon',
-      icon: '🩺',
+      icon: 'stethoscope',
       color: colors.secondaryDark,
-      bg: colors.secondaryLight,
+      bg: '#D1FAE5',
     },
     {
       key: 'FRONT_DESK',
       title: 'Front Desk / Reception Desk',
       tagline: 'Issue walk-in tokens, advance queue counter, check-in & cash desk',
       badge: 'Counter Staff',
-      icon: '🖥️',
+      icon: 'desk',
       color: '#B45309',
       bg: '#FEF3C7',
     },
@@ -64,16 +64,15 @@ export const RoleSwitcherModal: React.FC = () => {
       title: 'Hospital Director & Admin',
       tagline: 'Manage doctors, edit consultation fees, 4-branch revenue metrics',
       badge: 'Executive',
-      icon: '🛡️',
+      icon: 'shield-check',
       color: '#6D28D9',
-      bg: '#F5F3FF',
+      bg: '#EDE9FE',
     },
   ];
 
   const handleSelectRole = (role: UserRole) => {
     setActiveRole(role);
     closeRoleSwitcher();
-    // Default to home tab when switching roles
     setActiveTab('home');
   };
 
@@ -114,7 +113,7 @@ export const RoleSwitcherModal: React.FC = () => {
                   ]}
                 >
                   <View style={[styles.iconBox, { backgroundColor: r.bg }]}>
-                    <Text style={styles.roleEmoji}>{r.icon}</Text>
+                    <Icon name={r.icon} size={20} color={r.color} />
                   </View>
 
                   <View style={styles.roleInfo}>
@@ -151,14 +150,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: spacing.borderRadiusMd,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
   },
   header: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.primaryDark,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: typography.sizes.sm + 1,
@@ -166,61 +170,53 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   headerSub: {
-    fontSize: typography.sizes.xxs,
+    fontSize: 10.5,
     color: colors.primaryLight,
     marginTop: 1,
   },
   closeBtn: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 4,
   },
   body: {
-    padding: 10,
+    padding: 12,
     gap: 8,
   },
   roleCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.white,
-    borderRadius: spacing.borderRadiusSm + 2,
+    padding: 10,
+    borderRadius: spacing.borderRadiusSm,
+    backgroundColor: colors.surfaceSecondary,
     borderWidth: 1.5,
     borderColor: colors.border,
-    padding: 8,
     gap: 10,
   },
   iconBox: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  roleEmoji: {
-    fontSize: 20,
   },
   roleInfo: {
     flex: 1,
   },
   roleTopRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 4,
+    justifyContent: 'space-between',
+    marginBottom: 2,
   },
   roleTitle: {
-    fontSize: typography.sizes.xs + 0.5,
+    fontSize: typography.sizes.xs + 1,
     fontWeight: typography.weights.bold,
     color: colors.text,
+    flex: 1,
+    marginRight: 6,
   },
   roleTagline: {
-    fontSize: typography.sizes.xxs,
+    fontSize: 10,
     color: colors.textMuted,
-    marginTop: 2,
-    lineHeight: 12,
+    lineHeight: 14,
   },
 });

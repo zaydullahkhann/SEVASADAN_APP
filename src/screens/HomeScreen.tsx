@@ -16,8 +16,8 @@ import { useApp } from '../context/AppContext';
 import { DOCTORS } from '../data/doctors';
 import { CLINICS } from '../data/clinics';
 import { SPECIALTIES } from '../data/specialties';
-import { Icon } from '../components/common/Icon';
-import { Badge } from '../components/common/Badge';
+import { Icon, IconName } from '../components/common/Icon';
+import { DoctorAvatar } from '../components/common/DoctorAvatar';
 import { CompactCard } from '../components/common/CompactCard';
 import { Button } from '../components/common/Button';
 
@@ -27,7 +27,6 @@ export const HomeScreen: React.FC = () => {
     openBookingModal,
     queueStatuses,
     setActiveTab,
-    advanceQueue,
   } = useApp();
 
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('all');
@@ -60,17 +59,28 @@ export const HomeScreen: React.FC = () => {
     return matchesBranch && matchesSpecialty;
   });
 
-  const handleCallClinic = (phone: string, name: string) => {
-    Alert.alert(`Call ${name}`, `Dial ${phone}?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Call Now',
-        onPress: () => Linking.openURL(`tel:${phone.replace(/\s+/g, '')}`).catch(() => {}),
-      },
-    ]);
+  const handleEmergencyCall = () => {
+    Linking.openURL('tel:18007382723').catch(() => {
+      Alert.alert('Emergency Helpline', 'Call toll free: 1800-7382-723');
+    });
   };
 
   const leadDoctor = DOCTORS.find((d) => d.id === 'doc-ankur') || DOCTORS[0];
+
+  const getSpecialtyIcon = (specId: string): IconName => {
+    switch (specId) {
+      case 'pediatric':
+        return 'baby';
+      case 'general_medicine':
+        return 'stethoscope';
+      case 'gynaecology':
+        return 'heart';
+      case 'orthopedics':
+        return 'bone';
+      default:
+        return 'activity';
+    }
+  };
 
   return (
     <ScrollView
@@ -78,76 +88,157 @@ export const HomeScreen: React.FC = () => {
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
-      {/* 1. Live Queue Status Strip */}
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => setActiveTab('appointments')}
-        style={styles.liveQueueBar}
-      >
-        <View style={styles.queueLeft}>
-          <View style={styles.pulseDot} />
-          <Text style={styles.queueClinicText}>
-            {activeClinic ? activeClinic.shortName : 'Sarangpur'} OPD Live:
-          </Text>
-          <Text style={styles.queueServingToken}>
-            Now Serving {currentQueue?.currentServingToken || 'SAR-015'}
-          </Text>
+      {/* 1. Hospital Accreditation & Trust Bar */}
+      <View style={styles.trustBanner}>
+        <View style={styles.trustItem}>
+          <Icon name="shield-check" size={13} color={colors.primary} />
+          <Text style={styles.trustText}>NABH Standard OPD</Text>
         </View>
-        <View style={styles.queueRight}>
-          <Text style={styles.queueTrackBtn}>Track Queue ›</Text>
+        <View style={styles.trustDivider} />
+        <View style={styles.trustItem}>
+          <Icon name="check-circle" size={13} color={colors.secondary} />
+          <Text style={styles.trustText}>MCI Certified Specialists</Text>
+        </View>
+        <View style={styles.trustDivider} />
+        <View style={styles.trustItem}>
+          <Icon name="clock" size={13} color={colors.primary} />
+          <Text style={styles.trustText}>24x7 Trauma Care</Text>
+        </View>
+      </View>
+
+      {/* 2. Primary Consultation Mode Action Cards */}
+      <View style={styles.heroActionGrid}>
+        {/* Card 1: Hospital Visit */}
+        <TouchableOpacity
+          activeOpacity={0.88}
+          onPress={() => openBookingModal({ consultationMode: 'IN_CLINIC' })}
+          style={[styles.bigActionCard, styles.inClinicCard]}
+        >
+          <View style={styles.cardHeaderRow}>
+            <View style={[styles.actionIconCircle, { backgroundColor: colors.primary }]}>
+              <Icon name="hospital" size={20} color={colors.white} />
+            </View>
+            <View style={styles.modeBadge}>
+              <Text style={styles.modeBadgeText}>OPD Token</Text>
+            </View>
+          </View>
+          <View style={styles.cardBodyWrap}>
+            <Text style={styles.actionCardTitle}>Visit Hospital</Text>
+            <Text style={styles.actionCardDesc}>
+              Instant token for doctor chamber checkup & diagnostics
+            </Text>
+          </View>
+          <View style={styles.actionPill}>
+            <Text style={styles.actionPillText}>Book Token</Text>
+            <Icon name="chevron-right" size={12} color={colors.primary} />
+          </View>
+        </TouchableOpacity>
+
+        {/* Card 2: Video Call */}
+        <TouchableOpacity
+          activeOpacity={0.88}
+          onPress={() => openBookingModal({ consultationMode: 'ONLINE_VIDEO' })}
+          style={[styles.bigActionCard, styles.teleCard]}
+        >
+          <View style={styles.cardHeaderRow}>
+            <View style={[styles.actionIconCircle, { backgroundColor: '#0D9488' }]}>
+              <Icon name="video" size={20} color={colors.white} />
+            </View>
+            <View style={[styles.modeBadge, { backgroundColor: '#D1FAE5' }]}>
+              <Text style={[styles.modeBadgeText, { color: '#065F46' }]}>Live Call</Text>
+            </View>
+          </View>
+          <View style={styles.cardBodyWrap}>
+            <Text style={styles.actionCardTitle}>Doctor Video Call</Text>
+            <Text style={styles.actionCardDesc}>
+              HD Tele-consultation & Digital Rx with specialists
+            </Text>
+          </View>
+          <View style={[styles.actionPill, { backgroundColor: '#DCFCE7' }]}>
+            <Text style={[styles.actionPillText, { color: '#065F46' }]}>Start Call</Text>
+            <Icon name="chevron-right" size={12} color="#065F46" />
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      {/* 3. Live OPD Chamber & Queue Status Banner */}
+      <TouchableOpacity
+        activeOpacity={0.88}
+        onPress={() => setActiveTab('appointments')}
+        style={styles.queueBanner}
+      >
+        <View style={styles.queueBannerLeft}>
+          <View style={styles.pulseContainer}>
+            <View style={styles.pulseDot} />
+          </View>
+          <View>
+            <View style={styles.queueHeaderRow}>
+              <Text style={styles.queueBranchName}>
+                {activeClinic ? activeClinic.shortName : 'Sarangpur'} OPD Chamber
+              </Text>
+              <View style={styles.liveTag}>
+                <Text style={styles.liveTagText}>LIVE</Text>
+              </View>
+            </View>
+            <Text style={styles.queueBannerNumber}>
+              Now Serving Token: <Text style={styles.tokenHighlight}>#{currentQueue?.currentServingToken || 'SAR-015'}</Text>
+            </Text>
+          </View>
+        </View>
+        <View style={styles.queueTrackBtn}>
+          <Text style={styles.queueTrackText}>Track Queue</Text>
+          <Icon name="chevron-right" size={13} color={colors.primary} />
         </View>
       </TouchableOpacity>
 
-      {/* 2. Simplified Hero Doctor Card (Dr. Ankur Deshwali) */}
-      <CompactCard style={styles.heroCard}>
-        <View style={styles.heroTop}>
-          <View style={styles.heroAvatar}>
-            <Text style={styles.heroAvatarEmoji}>👨‍⚕️</Text>
-            <View style={styles.verifiedCheck}>
-              <Icon name="check" size={9} color={colors.white} />
+      {/* 4. Chief Specialist Doctor Highlight (Dr. Ankur Deshwali) */}
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionTitleRow}>
+          <Icon name="stethoscope" size={16} color={colors.primary} />
+          <Text style={styles.sectionTitle}>Chief Surgeon & Specialist</Text>
+        </View>
+        <View style={styles.verifiedTag}>
+          <Icon name="shield-check" size={11} color={colors.secondary} />
+          <Text style={styles.verifiedTagText}>Class-I Gazetted</Text>
+        </View>
+      </View>
+
+      <CompactCard style={styles.doctorHighlightCard}>
+        <View style={styles.docHighlightTop}>
+          <DoctorAvatar gender="male" size={62} isHeadSurgeon={true} />
+          <View style={styles.docHighlightInfo}>
+            <View style={styles.docNameBadgeRow}>
+              <Text style={styles.docHighlightName}>Dr. Ankur Deshwali</Text>
             </View>
-          </View>
-          <View style={styles.heroInfo}>
-            <View style={styles.heroBadgeRow}>
-              <Badge label="Lead Surgeon" variant="primary" size="sm" />
-              <Badge label="14+ Yrs Exp" variant="neutral" size="sm" />
-            </View>
-            <Text style={styles.heroName}>Dr. Ankur Deshwali</Text>
-            <Text style={styles.heroSpecialty}>
-              Pediatric, Newborn & General Laparoscopic Surgeon
+            <Text style={styles.docHighlightQual}>
+              MBBS • MS (Surgery) • MCh (Pediatric Surgery)
             </Text>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => setProfileModalDoctor(leadDoctor)}
-              style={styles.viewBioLink}
-            >
-              <Text style={styles.viewBioText}>View Credentials & Bio ›</Text>
-            </TouchableOpacity>
+            <Text style={styles.docHighlightSpec}>
+              Chief Neonatal & Pediatric Laparoscopic Surgeon
+            </Text>
+            <View style={styles.docMetaRow}>
+              <View style={styles.ratingBadge}>
+                <Icon name="star" size={11} color="#D97706" />
+                <Text style={styles.ratingText}>4.98 (680+)</Text>
+              </View>
+              <Text style={styles.dotDivider}>•</Text>
+              <Text style={styles.docExpText}>14+ Yrs Exp</Text>
+              <Text style={styles.dotDivider}>•</Text>
+              <Text style={styles.docRegText}>MP-52140</Text>
+            </View>
           </View>
         </View>
 
-        {/* Quick Highlights Bar */}
-        <View style={styles.heroStatsRow}>
-          <View style={styles.heroStat}>
-            <Text style={styles.statVal}>⭐ 4.98</Text>
-            <Text style={styles.statLabel}>680+ Reviews</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.heroStat}>
-            <Text style={styles.statVal}>₹400</Text>
-            <Text style={styles.statLabel}>In-Clinic OPD</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.heroStat}>
-            <Text style={styles.statVal}>₹500</Text>
-            <Text style={styles.statLabel}>Video Tele-OPD</Text>
-          </View>
+        <View style={styles.docSchedulePill}>
+          <Icon name="clock" size={12} color={colors.primary} />
+          <Text style={styles.scheduleText}>
+            Daily OPD: 09:00 AM - 02:00 PM (Chamber 101)
+          </Text>
         </View>
 
-        {/* Primary Action Buttons */}
-        <View style={styles.heroActionRow}>
+        <View style={styles.docActionRow}>
           <Button
-            title="Book OPD Token"
+            title="Book Visit (₹400)"
             onPress={() =>
               openBookingModal({
                 consultationMode: 'IN_CLINIC',
@@ -160,7 +251,7 @@ export const HomeScreen: React.FC = () => {
             style={{ flex: 1 }}
           />
           <Button
-            title="Book Video Call"
+            title="Video Call (₹500)"
             onPress={() =>
               openBookingModal({
                 consultationMode: 'ONLINE_VIDEO',
@@ -172,64 +263,26 @@ export const HomeScreen: React.FC = () => {
             icon="video"
             style={{ flex: 1 }}
           />
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setProfileModalDoctor(leadDoctor)}
+            style={styles.infoIconBtn}
+          >
+            <Icon name="info" size={16} color={colors.primary} />
+          </TouchableOpacity>
         </View>
       </CompactCard>
 
-      {/* 3. Clean Quick Action Cards */}
-      <View style={styles.actionCardsGrid}>
-        {/* Card 1: In-Clinic Physical OPD */}
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => openBookingModal({ consultationMode: 'IN_CLINIC' })}
-          style={[styles.bigActionCard, { borderColor: '#E2E8F0' }]}
-        >
-          <View style={styles.bigActionTop}>
-            <View style={[styles.actionIconBox, { backgroundColor: colors.primaryLight }]}>
-              <Icon name="hospital" size={18} color={colors.primary} />
-            </View>
-            <Badge label="Walk-In / Slot" variant="primary" size="sm" />
-          </View>
-          <Text style={styles.actionTitle}>In-Clinic Visit</Text>
-          <Text style={styles.actionDesc}>
-            Physical token for 4 hospital branches
-          </Text>
-          <View style={styles.actionBottomRow}>
-            <Text style={styles.actionLinkText}>Book Slot ›</Text>
-            <Text style={styles.actionFeeText}>From ₹350</Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Card 2: Virtual Video Consultation */}
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => openBookingModal({ consultationMode: 'ONLINE_VIDEO' })}
-          style={[styles.bigActionCard, { borderColor: '#E2E8F0' }]}
-        >
-          <View style={styles.bigActionTop}>
-            <View style={[styles.actionIconBox, { backgroundColor: colors.secondaryLight }]}>
-              <Icon name="video" size={18} color={colors.secondaryDark} />
-            </View>
-            <Badge label="Online HD" variant="success" size="sm" />
-          </View>
-          <Text style={styles.actionTitle}>Video Tele-OPD</Text>
-          <Text style={styles.actionDesc}>
-            Consult specialist doctors from home
-          </Text>
-          <View style={styles.actionBottomRow}>
-            <Text style={[styles.actionLinkText, { color: colors.secondaryDark }]}>
-              Start Video ›
-            </Text>
-            <Text style={styles.actionFeeText}>From ₹450</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      {/* 4. Specialization Filter */}
+      {/* 5. Specialist Doctors List */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Medical Specializations</Text>
-        <Text style={styles.sectionSub}>Filter consulting doctors by department</Text>
+        <View style={styles.sectionTitleRow}>
+          <Icon name="user" size={16} color={colors.primary} />
+          <Text style={styles.sectionTitle}>Consult Specialist Doctors</Text>
+        </View>
+        <Text style={styles.sectionSub}>All 4 Hospital Centers</Text>
       </View>
 
+      {/* Specialty Filter Chips with Vector Icons */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -237,6 +290,7 @@ export const HomeScreen: React.FC = () => {
       >
         {SPECIALTIES.map((spec) => {
           const isSelected = selectedSpecialty === spec.id;
+          const iconName = getSpecialtyIcon(spec.id);
           return (
             <TouchableOpacity
               key={spec.id}
@@ -247,6 +301,11 @@ export const HomeScreen: React.FC = () => {
                 isSelected && styles.specialtyChipSelected,
               ]}
             >
+              <Icon
+                name={iconName}
+                size={13}
+                color={isSelected ? colors.white : colors.textSecondary}
+              />
               <Text
                 style={[
                   styles.specialtyName,
@@ -255,151 +314,101 @@ export const HomeScreen: React.FC = () => {
               >
                 {spec.name}
               </Text>
-              <Badge
-                label={String(spec.doctorCount)}
-                variant={isSelected ? 'outline' : 'neutral'}
-                size="sm"
-                style={styles.specBadge}
-              />
             </TouchableOpacity>
           );
         })}
       </ScrollView>
 
-      {/* 5. Simplified Doctor Cards */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>
-          Specialist Panel ({filteredDoctors.length})
-        </Text>
-        <Text style={styles.sectionSub}>Verified doctors available for consultation</Text>
-      </View>
-
       {filteredDoctors.map((doc) => {
+        const isFemale = doc.id === 'doc-anjali';
         return (
-          <CompactCard key={doc.id} style={styles.docListCard}>
-            <View style={styles.docRow}>
+          <CompactCard key={doc.id} style={styles.docCard}>
+            <View style={styles.docCardRow}>
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => setProfileModalDoctor(doc)}
-                style={styles.docAvatar}
               >
-                <Icon
-                  name={doc.isHeadSurgeon ? 'baby' : 'stethoscope'}
-                  size={18}
-                  color={colors.primary}
+                <DoctorAvatar
+                  gender={isFemale ? 'female' : 'male'}
+                  size={50}
+                  isHeadSurgeon={!!doc.isHeadSurgeon}
                 />
               </TouchableOpacity>
-              <View style={styles.docDetails}>
-                <View style={styles.docTitleRow}>
-                  <Text style={styles.docNameText}>{doc.name}</Text>
-                  {doc.isHeadSurgeon && (
-                    <Badge label="Lead" variant="primary" size="sm" />
-                  )}
-                </View>
-                <Text style={styles.docSubSpecialty}>{doc.specialization}</Text>
-                <View style={styles.docMeta}>
-                  <Text style={styles.docMetaText}>
-                    ⭐ {doc.rating} • {doc.experienceYears}y exp • OPD: Daily
+              <View style={styles.docCardInfo}>
+                <Text style={styles.docCardName}>{doc.name}</Text>
+                <Text style={styles.docCardQual}>{doc.qualification}</Text>
+                <Text style={styles.docCardSpec}>{doc.specialization}</Text>
+                <View style={styles.docCardBottomRow}>
+                  <Text style={styles.docCardFee}>
+                    OPD: ₹{doc.consultationFeeClinic}
                   </Text>
+                  <Text style={styles.dotDivider}>•</Text>
+                  <View style={styles.ratingBadgeSmall}>
+                    <Icon name="star" size={10} color="#D97706" />
+                    <Text style={styles.ratingTextSmall}>{doc.rating}</Text>
+                  </View>
+                  <Text style={styles.dotDivider}>•</Text>
+                  <Text style={styles.docCardReg}>Reg: {doc.regNumber.split('/')[0]}</Text>
                 </View>
               </View>
-              <View style={styles.docActionRight}>
-                <Text style={styles.docFee}>₹{doc.consultationFeeClinic}</Text>
-                <Button
-                  title="Book"
-                  onPress={() =>
-                    openBookingModal({
-                      doctorId: doc.id,
-                      consultationMode: 'IN_CLINIC',
-                    })
-                  }
-                  variant="primary"
-                  size="sm"
-                  style={styles.miniBookBtn}
-                />
-              </View>
+              <Button
+                title="Book"
+                onPress={() =>
+                  openBookingModal({
+                    doctorId: doc.id,
+                    consultationMode: 'IN_CLINIC',
+                  })
+                }
+                variant="primary"
+                size="sm"
+                icon="token"
+                style={styles.bookBtnSmall}
+              />
             </View>
           </CompactCard>
         );
       })}
 
-      {/* 6. Clinic Branches Section */}
-      <View style={[styles.sectionHeader, { marginTop: 14 }]}>
-        <View style={styles.sectionTitleRow}>
-          <Text style={styles.sectionTitle}>SEVASADAN 4 Clinic Network</Text>
-          <TouchableOpacity onPress={() => setActiveTab('clinics')}>
-            <Text style={styles.viewAllText}>View Details ›</Text>
-          </TouchableOpacity>
+      {/* 6. Hospital Centers Summary Card */}
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => setActiveTab('clinics')}
+        style={styles.branchSummaryCard}
+      >
+        <View style={styles.branchSummaryLeft}>
+          <View style={styles.branchIconBadge}>
+            <Icon name="hospital" size={18} color={colors.primary} />
+          </View>
+          <View>
+            <Text style={styles.branchSummaryTitle}>SEVASADAN 4 Hospital Centers</Text>
+            <Text style={styles.branchSummarySub}>
+              Sarangpur • Shujalpur • Rajgarh • Biaora
+            </Text>
+          </View>
         </View>
-        <Text style={styles.sectionSub}>
-          OPD centers in Sarangpur, Shujalpur, Rajgarh & Biaora
-        </Text>
-      </View>
+        <View style={styles.branchSummaryAction}>
+          <Text style={styles.branchSummaryLink}>View Centers</Text>
+          <Icon name="chevron-right" size={13} color={colors.primary} />
+        </View>
+      </TouchableOpacity>
 
-      <View style={styles.clinicsGrid}>
-        {CLINICS.map((clinic) => {
-          const queue = queueStatuses[clinic.id];
-          return (
-            <CompactCard key={clinic.id} style={styles.clinicSummaryCard}>
-              <View style={styles.clinicHeaderRow}>
-                <View>
-                  <Text style={styles.clinicCardTitle}>{clinic.shortName} Branch</Text>
-                  <Text style={styles.clinicCardCity}>{clinic.city}, MP</Text>
-                </View>
-                <View style={styles.servingPill}>
-                  <Text style={styles.servingPillLabel}>OPD Serving: </Text>
-                  <Text style={styles.servingPillVal}>{queue?.currentServingToken}</Text>
-                </View>
-              </View>
-
-              <Text style={styles.clinicAddressText} numberOfLines={1}>
-                {clinic.address}
-              </Text>
-
-              <View style={styles.clinicCardActions}>
-                <Button
-                  title="Call"
-                  onPress={() => handleCallClinic(clinic.phone, clinic.name)}
-                  variant="outline"
-                  size="sm"
-                  icon="phone"
-                  style={{ flex: 1 }}
-                />
-                <Button
-                  title="Book Token"
-                  onPress={() =>
-                    openBookingModal({
-                      clinicId: clinic.id,
-                      consultationMode: 'IN_CLINIC',
-                    })
-                  }
-                  variant="secondary"
-                  size="sm"
-                  icon="token"
-                  style={{ flex: 1.3 }}
-                />
-              </View>
-            </CompactCard>
-          );
-        })}
-      </View>
-
-      {/* 7. Clean Emergency Help Banner */}
-      <View style={styles.emergencyBanner}>
-        <View style={styles.emergencyIconBox}>
+      {/* 7. Emergency 24x7 Help Banner */}
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={handleEmergencyCall}
+        style={styles.emergencyCard}
+      >
+        <View style={styles.emergencyIconCircle}>
           <Icon name="phone" size={16} color={colors.white} />
         </View>
         <View style={styles.emergencyTextWrap}>
-          <Text style={styles.emergencyHeading}>
-            Emergency & Neonatal Helpline
-          </Text>
-          <Text style={styles.emergencyPhoneText}>
-            Toll Free: 1800-7382-723 (24x7 Ambulance & OT)
-          </Text>
+          <Text style={styles.emergencyTitle}>24x7 Emergency Trauma & Ambulance</Text>
+          <Text style={styles.emergencySub}>Toll Free: 1800-7382-723 (Tap to Call)</Text>
         </View>
-      </View>
+        <Icon name="chevron-right" size={14} color="rgba(255,255,255,0.7)" />
+      </TouchableOpacity>
 
-      {/* Doctor Profile Modal for In-depth Details */}
+      {/* Doctor Profile Modal for Detailed Credentials */}
       {profileModalDoctor && (
         <Modal
           visible={!!profileModalDoctor}
@@ -410,7 +419,10 @@ export const HomeScreen: React.FC = () => {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContainer}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Doctor Profile</Text>
+                <View style={styles.modalHeaderLeft}>
+                  <Icon name="stethoscope" size={18} color={colors.primary} />
+                  <Text style={styles.modalTitle}>Doctor Credentials</Text>
+                </View>
                 <TouchableOpacity
                   onPress={() => setProfileModalDoctor(null)}
                   style={styles.modalCloseBtn}
@@ -421,10 +433,12 @@ export const HomeScreen: React.FC = () => {
 
               <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
                 <View style={styles.modalDocTop}>
-                  <View style={styles.modalAvatar}>
-                    <Text style={{ fontSize: 32 }}>👨‍⚕️</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
+                  <DoctorAvatar
+                    gender={profileModalDoctor.id === 'doc-anjali' ? 'female' : 'male'}
+                    size={64}
+                    isHeadSurgeon={!!profileModalDoctor.isHeadSurgeon}
+                  />
+                  <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text style={styles.modalDocName}>{profileModalDoctor.name}</Text>
                     <Text style={styles.modalDocSpecialty}>
                       {profileModalDoctor.specialization}
@@ -432,50 +446,49 @@ export const HomeScreen: React.FC = () => {
                     <Text style={styles.modalDocQual}>
                       {profileModalDoctor.qualification}
                     </Text>
+                    <Text style={styles.modalDocReg}>
+                      MCI / State Reg: {profileModalDoctor.regNumber}
+                    </Text>
                   </View>
                 </View>
 
                 <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionHeading}>Experience & Rating</Text>
-                  <Text style={styles.modalSectionBody}>
-                    {profileModalDoctor.experienceYears} Years of Clinical & Surgical Experience. Rated {profileModalDoctor.rating} ★ across 600+ patient consultations.
-                  </Text>
+                  <Text style={styles.modalSectionHeading}>Clinical Profile</Text>
+                  <Text style={styles.modalSectionBody}>{profileModalDoctor.bio}</Text>
                 </View>
 
                 <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionHeading}>About & Expertise</Text>
-                  <Text style={styles.modalSectionBody}>{profileModalDoctor.bio}</Text>
+                  <Text style={styles.modalSectionHeading}>OPD Schedule & Chambers</Text>
+                  <View style={styles.scheduleRow}>
+                    <Icon name="clock" size={14} color={colors.primary} />
+                    <Text style={styles.scheduleDetailText}>
+                      {profileModalDoctor.opdSchedule}
+                    </Text>
+                  </View>
                 </View>
 
                 <View style={styles.modalSection}>
                   <Text style={styles.modalSectionHeading}>Consultation Fees</Text>
                   <View style={styles.feeGrid}>
                     <View style={styles.feeItem}>
-                      <Text style={styles.feeItemLabel}>In-Clinic OPD</Text>
+                      <Text style={styles.feeItemLabel}>In-Clinic OPD Token</Text>
                       <Text style={styles.feeItemValue}>
                         ₹{profileModalDoctor.consultationFeeClinic}
                       </Text>
                     </View>
                     <View style={styles.feeItem}>
-                      <Text style={styles.feeItemLabel}>Video Tele-OPD</Text>
+                      <Text style={styles.feeItemLabel}>Tele-Video Consultation</Text>
                       <Text style={styles.feeItemValue}>
                         ₹{profileModalDoctor.consultationFeeOnline}
                       </Text>
                     </View>
                   </View>
                 </View>
-
-                <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionHeading}>Available Centers</Text>
-                  <Text style={styles.modalSectionBody}>
-                    Sarangpur Super Specialty Clinic, Shujalpur OPD, Rajgarh, Biaora
-                  </Text>
-                </View>
               </ScrollView>
 
               <View style={styles.modalFooter}>
                 <Button
-                  title="Book In-Clinic Token"
+                  title="Book Hospital Visit"
                   onPress={() => {
                     const docId = profileModalDoctor.id;
                     setProfileModalDoctor(null);
@@ -516,405 +529,500 @@ export const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F6F9FC',
   },
   contentContainer: {
     paddingHorizontal: spacing.screenPaddingHorizontal,
-    paddingTop: 10,
+    paddingTop: 8,
     paddingBottom: 28,
   },
-  liveQueueBar: {
+  trustBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.white,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: spacing.borderRadiusSm,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
     marginBottom: 10,
+  },
+  trustItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  trustText: {
+    fontSize: 10,
+    fontWeight: typography.weights.semiBold,
+    color: colors.textSecondary,
+  },
+  trustDivider: {
+    width: 1,
+    height: 12,
+    backgroundColor: '#E2E8F0',
+  },
+  heroActionGrid: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 10,
+  },
+  bigActionCard: {
+    flex: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    justifyContent: 'space-between',
+    backgroundColor: colors.white,
+    shadowColor: '#0F4C81',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  inClinicCard: {
+    borderColor: '#BAE6FD',
+    backgroundColor: '#F0F9FF',
+  },
+  teleCard: {
+    borderColor: '#A7F3D0',
+    backgroundColor: '#F0FDF4',
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  actionIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modeBadge: {
+    backgroundColor: '#E0F2FE',
+    paddingVertical: 2,
+    paddingHorizontal: 7,
+    borderRadius: 6,
+  },
+  modeBadgeText: {
+    fontSize: 9,
+    fontWeight: typography.weights.bold,
+    color: colors.primary,
+  },
+  cardBodyWrap: {
+    marginVertical: 4,
+  },
+  actionCardTitle: {
+    fontSize: typography.sizes.base,
+    fontWeight: typography.weights.bold,
+    color: colors.text,
+  },
+  actionCardDesc: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 2,
+    lineHeight: 15,
+  },
+  actionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#E0F2FE',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  actionPillText: {
+    fontSize: 11,
+    fontWeight: typography.weights.bold,
+    color: colors.primary,
+  },
+  queueBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 2,
     elevation: 1,
   },
-  queueLeft: {
+  queueBannerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
     flex: 1,
+    gap: 8,
+  },
+  pulseContainer: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#DCFCE7',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pulseDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.success,
+    backgroundColor: colors.secondary,
   },
-  queueClinicText: {
-    fontSize: typography.sizes.xs,
+  queueHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  queueBranchName: {
+    fontSize: 11,
+    fontWeight: typography.weights.semiBold,
     color: colors.textSecondary,
-    fontWeight: typography.weights.medium,
   },
-  queueServingToken: {
-    fontSize: typography.sizes.xs,
+  liveTag: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+  },
+  liveTagText: {
+    fontSize: 8,
     fontWeight: typography.weights.bold,
-    color: colors.primary,
+    color: '#065F46',
   },
-  queueRight: {
-    alignItems: 'flex-end',
+  queueBannerNumber: {
+    fontSize: typography.sizes.sm,
+    color: colors.text,
+    fontWeight: typography.weights.medium,
+    marginTop: 1,
+  },
+  tokenHighlight: {
+    color: colors.primary,
+    fontWeight: typography.weights.extraBold,
   },
   queueTrackBtn: {
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semiBold,
-    color: colors.primary,
-  },
-  heroCard: {
-    backgroundColor: colors.white,
-    marginBottom: 10,
-  },
-  heroTop: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  heroAvatar: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: colors.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  heroAvatarEmoji: {
-    fontSize: 28,
-  },
-  verifiedCheck: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 17,
-    height: 17,
-    borderRadius: 9,
-    backgroundColor: colors.secondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.white,
-  },
-  heroInfo: {
-    flex: 1,
-  },
-  heroBadgeRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: 4,
-  },
-  heroName: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.bold,
-    color: colors.text,
-  },
-  heroSpecialty: {
-    fontSize: typography.sizes.xs,
-    color: colors.textSecondary,
-    marginTop: 1,
-    lineHeight: 16,
-  },
-  viewBioLink: {
-    marginTop: 4,
-  },
-  viewBioText: {
-    fontSize: typography.sizes.xs,
-    color: colors.primary,
-    fontWeight: typography.weights.semiBold,
-  },
-  heroStatsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
-    backgroundColor: colors.surfaceSecondary,
-    borderRadius: spacing.borderRadiusSm,
-    paddingVertical: 8,
-    marginVertical: 10,
+    gap: 2,
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 6,
   },
-  heroStat: {
-    alignItems: 'center',
-  },
-  statVal: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
-    color: colors.text,
-  },
-  statLabel: {
-    fontSize: typography.sizes.xxs,
-    color: colors.textMuted,
-    marginTop: 1,
-  },
-  statDivider: {
-    width: 1,
-    height: 20,
-    backgroundColor: colors.border,
-  },
-  heroActionRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  actionCardsGrid: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 12,
-  },
-  bigActionCard: {
-    flex: 1,
-    borderRadius: spacing.borderRadiusMd,
-    borderWidth: 1,
-    backgroundColor: colors.white,
-    padding: 12,
-    justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  bigActionTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  actionIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  actionTitle: {
-    fontSize: typography.sizes.base,
-    fontWeight: typography.weights.bold,
-    color: colors.text,
-  },
-  actionDesc: {
-    fontSize: typography.sizes.xxs,
-    color: colors.textMuted,
-    marginTop: 2,
-    lineHeight: 15,
-  },
-  actionBottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 10,
-    paddingTop: 6,
-    borderTopWidth: 1,
-    borderTopColor: colors.surfaceSecondary,
-  },
-  actionLinkText: {
-    fontSize: typography.sizes.xs,
+  queueTrackText: {
+    fontSize: 11,
     fontWeight: typography.weights.bold,
     color: colors.primary,
-  },
-  actionFeeText: {
-    fontSize: typography.sizes.xxs,
-    fontWeight: typography.weights.medium,
-    color: colors.textSecondary,
   },
   sectionHeader: {
-    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 8,
+    marginTop: 4,
   },
   sectionTitleRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 6,
   },
   sectionTitle: {
     fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.text,
-    letterSpacing: -0.2,
-  },
-  viewAllText: {
-    fontSize: typography.sizes.xs,
-    color: colors.primary,
-    fontWeight: typography.weights.semiBold,
   },
   sectionSub: {
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     color: colors.textMuted,
+  },
+  verifiedTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  verifiedTagText: {
+    fontSize: 9,
+    fontWeight: typography.weights.bold,
+    color: '#065F46',
+  },
+  doctorHighlightCard: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    padding: 12,
+    marginBottom: 12,
+  },
+  docHighlightTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  docHighlightInfo: {
+    flex: 1,
+  },
+  docNameBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  docHighlightName: {
+    fontSize: typography.sizes.base,
+    fontWeight: typography.weights.bold,
+    color: colors.text,
+  },
+  docHighlightQual: {
+    fontSize: 11,
+    color: colors.primary,
+    fontWeight: typography.weights.medium,
     marginTop: 1,
+  },
+  docHighlightSpec: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  docMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 4,
+  },
+  ratingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  ratingText: {
+    fontSize: 10,
+    fontWeight: typography.weights.bold,
+    color: '#92400E',
+  },
+  dotDivider: {
+    fontSize: 10,
+    color: colors.textLight,
+  },
+  docExpText: {
+    fontSize: 10,
+    color: colors.textSecondary,
+    fontWeight: typography.weights.medium,
+  },
+  docRegText: {
+    fontSize: 10,
+    color: colors.textMuted,
+  },
+  docSchedulePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  scheduleText: {
+    fontSize: 10.5,
+    color: colors.textSecondary,
+    fontWeight: typography.weights.medium,
+  },
+  docActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  infoIconBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   specialtiesScroll: {
     gap: 8,
-    paddingVertical: 4,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   specialtyChip: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 5,
     backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 999,
     paddingVertical: 6,
     paddingHorizontal: 12,
-    gap: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   specialtyChipSelected: {
+    backgroundColor: colors.primary,
     borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
   },
   specialtyName: {
-    fontSize: typography.sizes.xs,
+    fontSize: 12,
     color: colors.textSecondary,
     fontWeight: typography.weights.medium,
   },
   specialtyNameSelected: {
-    color: colors.primary,
+    color: colors.white,
     fontWeight: typography.weights.bold,
   },
-  specBadge: {
-    marginLeft: 2,
-  },
-  docListCard: {
+  docCard: {
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 10,
     marginBottom: 8,
   },
-  docRow: {
+  docCardRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
   },
-  docAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  docDetails: {
+  docCardInfo: {
     flex: 1,
   },
-  docTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  docNameText: {
-    fontSize: typography.sizes.base,
+  docCardName: {
+    fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
-  docSubSpecialty: {
-    fontSize: typography.sizes.xs,
+  docCardQual: {
+    fontSize: 10,
+    color: colors.primary,
+    fontWeight: typography.weights.medium,
+  },
+  docCardSpec: {
+    fontSize: 10.5,
     color: colors.textSecondary,
     marginTop: 1,
   },
-  docMeta: {
-    marginTop: 2,
-  },
-  docMetaText: {
-    fontSize: typography.sizes.xxs,
-    color: colors.textMuted,
-  },
-  docActionRight: {
-    alignItems: 'flex-end',
-    marginLeft: 8,
-  },
-  docFee: {
-    fontSize: typography.sizes.base,
-    fontWeight: typography.weights.bold,
-    color: colors.primary,
-  },
-  miniBookBtn: {
-    marginTop: 4,
-    paddingVertical: 5,
-    paddingHorizontal: 12,
-  },
-  clinicsGrid: {
-    gap: 8,
-  },
-  clinicSummaryCard: {
-    marginBottom: 6,
-  },
-  clinicHeaderRow: {
+  docCardBottomRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 3,
+  },
+  docCardFee: {
+    fontSize: 10.5,
+    fontWeight: typography.weights.bold,
+    color: '#065F46',
+  },
+  ratingBadgeSmall: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  ratingTextSmall: {
+    fontSize: 10,
+    fontWeight: typography.weights.bold,
+    color: '#92400E',
+  },
+  docCardReg: {
+    fontSize: 9.5,
+    color: colors.textLight,
+  },
+  bookBtnSmall: {
+    minWidth: 70,
+  },
+  branchSummaryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 10,
+    marginTop: 6,
+    marginBottom: 10,
+  },
+  branchSummaryLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  branchIconBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: '#E0F2FE',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  clinicCardTitle: {
-    fontSize: typography.sizes.base,
+  branchSummaryTitle: {
+    fontSize: 12,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
-  clinicCardCity: {
-    fontSize: typography.sizes.xs,
+  branchSummarySub: {
+    fontSize: 10.5,
     color: colors.textMuted,
+    marginTop: 1,
   },
-  servingPill: {
+  branchSummaryAction: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surfaceSecondary,
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    borderRadius: 6,
+    gap: 2,
   },
-  servingPillLabel: {
-    fontSize: typography.sizes.xxs,
-    color: colors.textMuted,
-  },
-  servingPillVal: {
-    fontSize: typography.sizes.xxs,
+  branchSummaryLink: {
+    fontSize: 11,
     fontWeight: typography.weights.bold,
     color: colors.primary,
   },
-  clinicAddressText: {
-    fontSize: typography.sizes.xs,
-    color: colors.textSecondary,
-    marginVertical: 6,
-  },
-  clinicCardActions: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 4,
-  },
-  emergencyBanner: {
+  emergencyCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primaryDark,
-    borderRadius: spacing.borderRadiusMd,
+    backgroundColor: '#B91C1C',
+    borderRadius: 10,
     padding: 12,
-    marginTop: 14,
-    gap: 12,
+    gap: 10,
   },
-  emergencyIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.danger,
+  emergencyIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   emergencyTextWrap: {
     flex: 1,
   },
-  emergencyHeading: {
-    fontSize: typography.sizes.sm,
+  emergencyTitle: {
+    fontSize: 12,
     fontWeight: typography.weights.bold,
     color: colors.white,
   },
-  emergencyPhoneText: {
-    fontSize: typography.sizes.xs,
-    color: colors.accentLight,
-    marginTop: 2,
+  emergencySub: {
+    fontSize: 10.5,
+    color: '#FEE2E2',
+    marginTop: 1,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
     justifyContent: 'flex-end',
   },
   modalContainer: {
@@ -922,19 +1030,24 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '85%',
-    paddingBottom: 24,
+    paddingBottom: 20,
   },
   modalHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: '#E2E8F0',
+  },
+  modalHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   modalTitle: {
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
@@ -947,77 +1060,90 @@ const styles = StyleSheet.create({
   },
   modalDocTop: {
     flexDirection: 'row',
-    gap: 14,
     alignItems: 'center',
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surfaceSecondary,
-  },
-  modalAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 14,
   },
   modalDocName: {
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
   modalDocSpecialty: {
-    fontSize: typography.sizes.sm,
+    fontSize: 11.5,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
+  modalDocQual: {
+    fontSize: 11,
     color: colors.primary,
     fontWeight: typography.weights.semiBold,
     marginTop: 2,
   },
-  modalDocQual: {
-    fontSize: typography.sizes.xs,
+  modalDocReg: {
+    fontSize: 10,
     color: colors.textMuted,
     marginTop: 2,
   },
   modalSection: {
-    marginTop: 14,
+    marginBottom: 14,
   },
   modalSectionHeading: {
-    fontSize: typography.sizes.sm,
+    fontSize: 12,
     fontWeight: typography.weights.bold,
     color: colors.text,
     marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   modalSectionBody: {
-    fontSize: typography.sizes.sm,
+    fontSize: 12,
     color: colors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 18,
+  },
+  scheduleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F0F9FF',
+    padding: 8,
+    borderRadius: 6,
+  },
+  scheduleDetailText: {
+    fontSize: 11.5,
+    color: colors.primary,
+    fontWeight: typography.weights.medium,
   },
   feeGrid: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 6,
+    gap: 10,
   },
   feeItem: {
     flex: 1,
-    backgroundColor: colors.surfaceSecondary,
+    backgroundColor: '#F8FAFC',
     padding: 10,
-    borderRadius: spacing.borderRadiusSm,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   feeItemLabel: {
-    fontSize: typography.sizes.xs,
+    fontSize: 10.5,
     color: colors.textMuted,
   },
   feeItemValue: {
-    fontSize: typography.sizes.md,
+    fontSize: 14,
     fontWeight: typography.weights.bold,
-    color: colors.primary,
+    color: colors.text,
     marginTop: 2,
   },
   modalFooter: {
     flexDirection: 'row',
     gap: 10,
     paddingHorizontal: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    paddingTop: 10,
   },
 });

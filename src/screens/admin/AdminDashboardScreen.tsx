@@ -14,6 +14,7 @@ import { typography } from '../../theme/typography';
 import { useApp } from '../../context/AppContext';
 import { CLINICS } from '../../data/clinics';
 import { Icon } from '../../components/common/Icon';
+import { DoctorAvatar } from '../../components/common/DoctorAvatar';
 import { Badge } from '../../components/common/Badge';
 import { CompactCard } from '../../components/common/CompactCard';
 import { Button } from '../../components/common/Button';
@@ -169,13 +170,11 @@ export const AdminDashboardScreen: React.FC = () => {
           >
             {/* Doctor Info Header */}
             <View style={styles.docAdminTop}>
-              <View style={styles.docAvatarCircle}>
-                <Icon
-                  name={doc.isHeadSurgeon ? 'baby' : 'stethoscope'}
-                  size={16}
-                  color={colors.primary}
-                />
-              </View>
+              <DoctorAvatar
+                gender={doc.id === 'doc-anjali' ? 'female' : 'male'}
+                size={44}
+                isHeadSurgeon={!!doc.isHeadSurgeon}
+              />
 
               <View style={styles.docAdminInfo}>
                 <View style={styles.docAdminNameRow}>

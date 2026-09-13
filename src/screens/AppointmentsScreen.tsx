@@ -88,6 +88,10 @@ export const AppointmentsScreen: React.FC = () => {
       (a.status === 'CONFIRMED' || a.status === 'IN_PROGRESS')
   );
 
+  const patientsAhead = userApt
+    ? Math.max(0, userApt.tokenIndex - queueStatus.currentServingIndex)
+    : 0;
+
   const handleCancel = (id: string, token: string) => {
     Alert.alert(
       'Cancel Appointment',
@@ -116,15 +120,15 @@ export const AppointmentsScreen: React.FC = () => {
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
-      {/* 1. Clean OPD Live Queue Tracker */}
+      {/* 1. Live OPD Queue Tracker Card */}
       <CompactCard style={styles.trackerCard}>
         <View style={styles.trackerHeader}>
           <View style={styles.trackerTitleRow}>
             <View style={styles.livePulse} />
-            <Text style={styles.trackerTitle}>Live OPD Queue Tracker</Text>
+            <Text style={styles.trackerTitle}>Live OPD Queue Status</Text>
           </View>
 
-          {/* Branch Selector */}
+          {/* Branch Selector Chips */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.queueChips}>
             {CLINICS.map((c) => (
               <TouchableOpacity
@@ -134,6 +138,7 @@ export const AppointmentsScreen: React.FC = () => {
                   styles.queueChip,
                   activeQueueClinicId === c.id && styles.queueChipActive,
                 ]}
+                activeOpacity={0.8}
               >
                 <Text
                   style={[
@@ -148,14 +153,14 @@ export const AppointmentsScreen: React.FC = () => {
           </ScrollView>
         </View>
 
-        {/* Big Numbers Display */}
+        {/* Display Numbers */}
         <View style={styles.queueDisplayRow}>
           <View style={styles.queueCol}>
             <Text style={styles.queueColLabel}>NOW SERVING</Text>
             <Text style={styles.servingBigNumber}>
               {queueStatus.currentServingToken}
             </Text>
-            <Text style={styles.queueColSub}>Room 1 (OPD)</Text>
+            <Text style={styles.queueColSub}>Room 1 (Consultation)</Text>
           </View>
 
           <View style={styles.queueDivider} />
@@ -174,13 +179,15 @@ export const AppointmentsScreen: React.FC = () => {
                 </Text>
                 <Text style={styles.queueColSub}>
                   {userApt
-                    ? `${Math.max(0, userApt.tokenIndex - queueStatus.currentServingIndex)} ahead`
+                    ? patientsAhead === 0
+                      ? 'Your turn now!'
+                      : `${patientsAhead} ahead of you`
                     : 'No active token'}
                 </Text>
               </>
             ) : activeRole === 'DOCTOR' ? (
               <>
-                <Text style={styles.queueColLabel}>PATIENTS IN LINE</Text>
+                <Text style={styles.queueColLabel}>WAITING PATIENTS</Text>
                 <Text style={styles.userTokenNumber}>
                   {
                     appointments.filter(
@@ -191,33 +198,60 @@ export const AppointmentsScreen: React.FC = () => {
                     ).length
                   }
                 </Text>
-                <Text style={styles.queueColSub}>Waiting for OPD</Text>
+                <Text style={styles.queueColSub}>In your queue</Text>
               </>
             ) : (
               <>
-                <Text style={styles.queueColLabel}>TOTAL TODAY</Text>
+                <Text style={styles.queueColLabel}>TODAY'S TOKENS</Text>
                 <Text style={styles.userTokenNumber}>
                   {queueStatus.totalIssuedToday}
                 </Text>
-                <Text style={styles.queueColSub}>Tokens Issued</Text>
+                <Text style={styles.queueColSub}>Total issued</Text>
               </>
             )}
           </View>
         </View>
 
-        {/* Queue Wait Time & Action */}
+        {/* Status Callout Bar */}
+        {activeRole === 'PATIENT' && userApt && (
+          <View
+            style={[
+              styles.queueCalloutBanner,
+              patientsAhead === 0 && styles.queueCalloutBannerAlert,
+            ]}
+          >
+            <Icon
+              name={patientsAhead === 0 ? 'bell' : 'clock'}
+              size={14}
+              color={patientsAhead === 0 ? colors.danger : colors.primary}
+            />
+            <Text
+              style={[
+                styles.queueCalloutText,
+                patientsAhead === 0 && styles.queueCalloutTextAlert,
+              ]}
+            >
+              {patientsAhead === 0
+                ? 'Your token is currently being called! Proceed to Room 1.'
+                : `~${patientsAhead * queueStatus.estimatedWaitMinutesPerPatient} mins estimated wait (${patientsAhead} patient${patientsAhead > 1 ? 's' : ''} ahead)`}
+            </Text>
+          </View>
+        )}
+
+        {/* Footer Meta & Demo Advance */}
         <View style={styles.queueMetaBar}>
           <View style={styles.metaItem}>
-            <Icon name="clock" size={11} color={colors.textSecondary} />
+            <Icon name="clock" size={12} color={colors.textMuted} />
             <Text style={styles.metaItemText}>
-              Avg wait ~{queueStatus.estimatedWaitMinutesPerPatient}m / patient
+              ~{queueStatus.estimatedWaitMinutesPerPatient}m avg per consultation
             </Text>
           </View>
           <TouchableOpacity
             onPress={() => advanceQueue(activeQueueClinicId)}
             style={styles.advanceSimBtn}
+            activeOpacity={0.7}
           >
-            <Icon name="refresh" size={10} color={colors.primary} />
+            <Icon name="refresh" size={11} color={colors.primary} />
             <Text style={styles.advanceSimText}>Next Token (Demo)</Text>
           </TouchableOpacity>
         </View>
@@ -234,6 +268,7 @@ export const AppointmentsScreen: React.FC = () => {
             key={s.key}
             onPress={() => setSegment(s.key)}
             style={[styles.segmentBtn, segment === s.key && styles.segmentBtnActive]}
+            activeOpacity={0.8}
           >
             <Text
               style={[
@@ -251,15 +286,15 @@ export const AppointmentsScreen: React.FC = () => {
       {filtered.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Icon name="calendar" size={36} color={colors.textLight} />
-          <Text style={styles.emptyTitle}>No {segment.toLowerCase()} visits</Text>
+          <Text style={styles.emptyTitle}>No {segment.toLowerCase()} appointments</Text>
           <Text style={styles.emptySub}>
             {activeRole === 'DOCTOR'
               ? segment === 'UPCOMING' && pastCount > 0
-                ? `All ${pastCount} assigned consultations for today have been completed!`
+                ? `All ${pastCount} consultations for today have been completed!`
                 : 'Patients assigned to your consultation schedule will appear here.'
               : activeRole === 'FRONT_DESK'
               ? 'Issue walk-in tokens from the counter desk to add patients.'
-              : 'Book a clinic visit or online video consultation in seconds.'}
+              : 'Book a hospital visit or doctor video consultation in just a few taps.'}
           </Text>
           {activeRole === 'PATIENT' && (
             <Button
@@ -376,7 +411,7 @@ export const AppointmentsScreen: React.FC = () => {
                       />
                     ) : isOnline ? (
                       <Button
-                        title="Join Video OPD"
+                        title="Join Video Call"
                         onPress={() => openVideoCall(apt)}
                         variant="secondary"
                         size="sm"
@@ -385,7 +420,7 @@ export const AppointmentsScreen: React.FC = () => {
                       />
                     ) : (
                       <Button
-                        title="View Pass"
+                        title="View Token Pass"
                         onPress={() =>
                           handleViewPass(
                             apt.tokenNumber,
@@ -455,7 +490,7 @@ export const AppointmentsScreen: React.FC = () => {
                   <Text style={styles.modalValue}>{selectedAptDetails.doctorName}</Text>
                 </View>
                 <View style={styles.modalDetailRow}>
-                  <Text style={styles.modalLabel}>Clinic Branch:</Text>
+                  <Text style={styles.modalLabel}>Hospital Branch:</Text>
                   <Text style={styles.modalValue}>{selectedAptDetails.clinicName}</Text>
                 </View>
                 <View style={styles.modalDetailRow}>
@@ -471,11 +506,11 @@ export const AppointmentsScreen: React.FC = () => {
                   </Text>
                 </View>
                 <View style={styles.modalDetailRow}>
-                  <Text style={styles.modalLabel}>Mode:</Text>
+                  <Text style={styles.modalLabel}>Consultation Mode:</Text>
                   <Text style={styles.modalValue}>
                     {selectedAptDetails.consultationMode === 'ONLINE_VIDEO'
-                      ? 'Private Video Tele-OPD'
-                      : 'In-Clinic Physical Visit'}
+                      ? 'Doctor Video Call (Tele-OPD)'
+                      : 'Hospital In-Clinic Visit'}
                   </Text>
                 </View>
                 <View style={styles.modalDetailRow}>
@@ -486,7 +521,7 @@ export const AppointmentsScreen: React.FC = () => {
                 </View>
                 {selectedAptDetails.reasonForVisit && (
                   <View style={styles.modalDetailRow}>
-                    <Text style={styles.modalLabel}>Reason for Visit:</Text>
+                    <Text style={styles.modalLabel}>Reason / Symptoms:</Text>
                     <Text style={styles.modalValue}>{selectedAptDetails.reasonForVisit}</Text>
                   </View>
                 )}
@@ -547,9 +582,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   queueChip: {
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 999,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     backgroundColor: colors.surfaceSecondary,
     marginRight: 6,
   },
@@ -568,8 +603,8 @@ const styles = StyleSheet.create({
   queueDisplayRow: {
     flexDirection: 'row',
     backgroundColor: colors.surfaceSecondary,
-    borderRadius: spacing.borderRadiusSm,
-    paddingVertical: 10,
+    borderRadius: 10,
+    paddingVertical: 12,
     alignItems: 'center',
   },
   queueCol: {
@@ -604,6 +639,28 @@ const styles = StyleSheet.create({
     height: 36,
     backgroundColor: colors.border,
   },
+  queueCalloutBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.primaryLight,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  queueCalloutBannerAlert: {
+    backgroundColor: '#FEE2E2',
+  },
+  queueCalloutText: {
+    fontSize: typography.sizes.xs,
+    color: colors.primary,
+    fontWeight: typography.weights.semiBold,
+  },
+  queueCalloutTextAlert: {
+    color: colors.danger,
+    fontWeight: typography.weights.bold,
+  },
   queueMetaBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -637,7 +694,7 @@ const styles = StyleSheet.create({
   segmentContainer: {
     flexDirection: 'row',
     backgroundColor: colors.white,
-    borderRadius: spacing.borderRadiusSm,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.border,
     padding: 3,
@@ -645,9 +702,9 @@ const styles = StyleSheet.create({
   },
   segmentBtn: {
     flex: 1,
-    paddingVertical: 6,
+    paddingVertical: 7,
     alignItems: 'center',
-    borderRadius: spacing.borderRadiusSm - 2,
+    borderRadius: 6,
   },
   segmentBtnActive: {
     backgroundColor: colors.primary,
@@ -716,7 +773,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: colors.surfaceSecondary,
-    paddingVertical: 5,
+    paddingVertical: 6,
     paddingHorizontal: 8,
     borderRadius: 6,
     marginTop: 8,

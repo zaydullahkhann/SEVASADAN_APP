@@ -15,6 +15,7 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { Icon } from '../common/Icon';
+import { DoctorAvatar } from '../common/DoctorAvatar';
 
 interface LiveKitRoomContentProps {
   otherPartyName: string;
@@ -177,7 +178,7 @@ const RoomContent: React.FC<LiveKitRoomContentProps> = ({
             />
             <Text style={styles.remoteNameText}>
               {isScreenSharing
-                ? `🖥️ ${otherPartyName}'s Screen`
+                ? `${otherPartyName}'s Screen`
                 : `${otherPartyName} (Live HD)`}
             </Text>
           </View>
@@ -185,9 +186,11 @@ const RoomContent: React.FC<LiveKitRoomContentProps> = ({
       ) : remoteParticipants.length > 0 && !hasRemoteLeft ? (
         <View style={styles.waitingContainer}>
           <View style={styles.doctorAvatarCircle}>
-            <Text style={styles.doctorAvatarBigEmoji}>
-              {isDoctorRole ? '👤' : '👨‍⚕️'}
-            </Text>
+            {isDoctorRole ? (
+              <Icon name="user" size={40} color={colors.primary} />
+            ) : (
+              <DoctorAvatar gender="male" size={64} isHeadSurgeon={true} />
+            )}
             <View style={styles.audioActivePulse}>
               <View style={styles.liveIndicatorDot} />
               <Text style={styles.audioActiveText}>Audio Connected</Text>

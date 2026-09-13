@@ -13,6 +13,7 @@ import { typography } from '../theme/typography';
 import { useApp } from '../context/AppContext';
 import { REGISTERED_PATIENTS } from '../data/mockData';
 import { Icon } from '../components/common/Icon';
+import { DoctorAvatar } from '../components/common/DoctorAvatar';
 import { Badge } from '../components/common/Badge';
 import { CompactCard } from '../components/common/CompactCard';
 import { Button } from '../components/common/Button';
@@ -78,9 +79,7 @@ export const ProfileScreen: React.FC = () => {
       >
         <CompactCard style={styles.profileCard}>
           <View style={styles.profileRow}>
-            <View style={styles.avatarBox}>
-              <Text style={styles.avatarEmoji}>👨‍⚕️</Text>
-            </View>
+            <DoctorAvatar gender="male" size={60} isHeadSurgeon={true} />
             <View style={styles.profileDetails}>
               <View style={styles.nameRow}>
                 <Text style={styles.patientName}>{currentDoctor.name}</Text>
@@ -108,9 +107,12 @@ export const ProfileScreen: React.FC = () => {
             </View>
             <View style={styles.statSep} />
             <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: colors.warning }]}>
-                4.9 ★
-              </Text>
+              <View style={styles.ratingRow}>
+                <Icon name="star" size={12} color="#D97706" />
+                <Text style={[styles.statNumber, { color: '#92400E', marginLeft: 3 }]}>
+                  4.98
+                </Text>
+              </View>
               <Text style={styles.statLabel}>Patient Rating</Text>
             </View>
           </View>
@@ -128,8 +130,8 @@ export const ProfileScreen: React.FC = () => {
               <Text style={styles.deskTitle}>Consultation Status</Text>
               <Text style={styles.dutyStatusSub}>
                 {currentDoctor.dutyStatus === 'AVAILABLE'
-                  ? '🟢 Available in OPD (Accepting Patients & Calls)'
-                  : '🔴 In Operation Theatre (OT / Surgery Session)'}
+                  ? 'Available in OPD (Accepting Patients & Calls)'
+                  : 'In Operation Theatre (OT / Surgery Session)'}
               </Text>
             </View>
             <TouchableOpacity
@@ -183,7 +185,7 @@ export const ProfileScreen: React.FC = () => {
           onPress={handleSignOut}
           variant="outline"
           size="md"
-          icon="close"
+          icon="log-out"
           fullWidth
           style={{ marginTop: 14, borderColor: colors.danger }}
           textStyle={{ color: colors.danger }}
@@ -208,8 +210,8 @@ export const ProfileScreen: React.FC = () => {
       >
         <CompactCard style={styles.profileCard}>
           <View style={styles.profileRow}>
-            <View style={styles.avatarBox}>
-              <Text style={styles.avatarEmoji}>🖥️</Text>
+            <View style={styles.deskAvatarCircle}>
+              <Icon name="desk" size={24} color={colors.primary} />
             </View>
             <View style={styles.profileDetails}>
               <View style={styles.nameRow}>
@@ -282,7 +284,7 @@ export const ProfileScreen: React.FC = () => {
           onPress={handleSignOut}
           variant="outline"
           size="md"
-          icon="close"
+          icon="log-out"
           fullWidth
           style={{ marginTop: 14, borderColor: colors.danger }}
           textStyle={{ color: colors.danger }}
@@ -307,8 +309,8 @@ export const ProfileScreen: React.FC = () => {
       >
         <CompactCard style={styles.profileCard}>
           <View style={styles.profileRow}>
-            <View style={styles.avatarBox}>
-              <Text style={styles.avatarEmoji}>🛡️</Text>
+            <View style={[styles.deskAvatarCircle, { backgroundColor: '#EDE9FE' }]}>
+              <Icon name="shield-check" size={24} color="#5B21B6" />
             </View>
             <View style={styles.profileDetails}>
               <View style={styles.nameRow}>
@@ -365,7 +367,7 @@ export const ProfileScreen: React.FC = () => {
           onPress={handleSignOut}
           variant="outline"
           size="md"
-          icon="close"
+          icon="log-out"
           fullWidth
           style={{ marginTop: 14, borderColor: colors.danger }}
           textStyle={{ color: colors.danger }}
@@ -390,15 +392,13 @@ export const ProfileScreen: React.FC = () => {
       {/* Patient Profile Card */}
       <CompactCard style={styles.profileCard}>
         <View style={styles.profileRow}>
-          <View style={styles.avatarBox}>
-            <Text style={styles.avatarEmoji}>
-              {currentPatient.gender === 'Female' ? '👩' : '👨'}
-            </Text>
+          <View style={styles.patientAvatarBox}>
+            <Icon name="user" size={24} color={colors.primary} />
           </View>
           <View style={styles.profileDetails}>
             <View style={styles.nameRow}>
               <Text style={styles.patientName}>{currentPatient.name}</Text>
-              <Badge label="Registered" variant="success" size="sm" />
+              <Badge label="UHID Active" variant="success" size="sm" />
             </View>
             <Text style={styles.patientPhone}>+91 {currentPatient.phone}</Text>
             <Text style={styles.patientMeta}>
@@ -492,7 +492,7 @@ export const ProfileScreen: React.FC = () => {
         onPress={handleSignOut}
         variant="outline"
         size="md"
-        icon="close"
+        icon="log-out"
         fullWidth
         style={{ marginTop: 14, borderColor: colors.danger }}
         textStyle={{ color: colors.danger }}
@@ -509,7 +509,7 @@ export const ProfileScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F6F9FC',
   },
   contentContainer: {
     paddingHorizontal: spacing.screenPaddingHorizontal,
@@ -518,22 +518,34 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     marginBottom: 10,
+    backgroundColor: colors.white,
+    borderColor: '#E2E8F0',
+    borderWidth: 1,
   },
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  avatarBox: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.primaryLight,
+  patientAvatarBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#E0F2FE',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
   },
-  avatarEmoji: {
-    fontSize: 26,
+  deskAvatarCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#FEF3C7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
   },
   profileDetails: {
     flex: 1,
@@ -574,12 +586,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    backgroundColor: colors.surfaceSecondary,
+    backgroundColor: '#F8FAFC',
     borderRadius: spacing.borderRadiusSm,
     paddingVertical: 8,
     marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   statItem: {
+    alignItems: 'center',
+  },
+  ratingRow: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   statNumber: {
@@ -644,6 +662,9 @@ const styles = StyleSheet.create({
   },
   deskCard: {
     marginBottom: 10,
+    backgroundColor: colors.white,
+    borderColor: '#E2E8F0',
+    borderWidth: 1,
   },
   deskRow: {
     flexDirection: 'row',
@@ -654,7 +675,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: '#E0F2FE',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -680,7 +701,7 @@ const styles = StyleSheet.create({
   },
   switchCard: {
     width: '48.5%',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.white,
     borderRadius: spacing.borderRadiusSm,
     padding: 10,
     borderWidth: 1,
@@ -688,7 +709,7 @@ const styles = StyleSheet.create({
   },
   switchCardActive: {
     borderColor: colors.primary,
-    backgroundColor: colors.surfaceSecondary,
+    backgroundColor: '#F0F9FF',
   },
   switchTop: {
     flexDirection: 'row',
@@ -710,6 +731,9 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     marginBottom: 10,
+    backgroundColor: colors.white,
+    borderColor: '#E2E8F0',
+    borderWidth: 1,
   },
   infoTitle: {
     fontSize: typography.sizes.sm,

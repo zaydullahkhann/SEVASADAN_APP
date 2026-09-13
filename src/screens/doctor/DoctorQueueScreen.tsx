@@ -14,6 +14,8 @@ import { useApp } from '../../context/AppContext';
 import { Badge } from '../../components/common/Badge';
 import { CompactCard } from '../../components/common/CompactCard';
 import { Button } from '../../components/common/Button';
+import { Icon } from '../../components/common/Icon';
+import { DoctorAvatar } from '../../components/common/DoctorAvatar';
 
 export const DoctorQueueScreen: React.FC = () => {
   const {
@@ -73,9 +75,7 @@ export const DoctorQueueScreen: React.FC = () => {
       {/* Doctor Header Summary Card */}
       <CompactCard style={styles.doctorHeaderCard} borderAccent={colors.secondary}>
         <View style={styles.docHeaderRow}>
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarEmoji}>👨‍⚕️</Text>
-          </View>
+          <DoctorAvatar gender="male" size={50} isHeadSurgeon={true} />
           <View style={styles.docHeaderInfo}>
             <View style={styles.nameRow}>
               <Text style={styles.docName}>{doctor.name}</Text>
@@ -119,7 +119,9 @@ export const DoctorQueueScreen: React.FC = () => {
           onPress={() => setActiveTab('appointments')}
         >
           <View style={styles.visitsQuickLinkLeft}>
-            <Text style={styles.visitsQuickLinkIcon}>📅</Text>
+            <View style={styles.calIconBox}>
+              <Icon name="calendar" size={16} color={colors.primary} />
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.visitsQuickLinkTitle}>
                 Patient Visits & Schedule Log
@@ -129,7 +131,7 @@ export const DoctorQueueScreen: React.FC = () => {
               </Text>
             </View>
           </View>
-          <Text style={styles.visitsQuickLinkArrow}>➔</Text>
+          <Icon name="chevron-right" size={14} color={colors.primary} />
         </TouchableOpacity>
       </CompactCard>
 
@@ -294,7 +296,10 @@ export const DoctorQueueScreen: React.FC = () => {
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             activeOpacity={0.7}
           >
-            <Text style={styles.viewAllVisitsLink}>All Visits Log ➔</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+              <Text style={styles.viewAllVisitsLink}>All Visits Log</Text>
+              <Icon name="chevron-right" size={12} color={colors.primary} />
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -319,7 +324,7 @@ export const DoctorQueueScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F6F9FC',
   },
   contentContainer: {
     paddingHorizontal: spacing.screenPaddingHorizontal,
@@ -328,22 +333,14 @@ const styles = StyleSheet.create({
   },
   doctorHeaderCard: {
     marginBottom: 8,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   docHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-  },
-  avatarCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarEmoji: {
-    fontSize: 22,
   },
   docHeaderInfo: {
     flex: 1,
@@ -364,17 +361,19 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semiBold,
   },
   docSpec: {
-    fontSize: 9,
+    fontSize: 10,
     color: colors.textMuted,
   },
   statsStrip: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    backgroundColor: colors.surfaceSecondary,
+    backgroundColor: '#F8FAFC',
     borderRadius: spacing.borderRadiusSm,
     paddingVertical: 5,
     marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   statCol: {
     alignItems: 'center',
@@ -385,17 +384,57 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   statLbl: {
-    fontSize: 8.5,
+    fontSize: 9,
     color: colors.textMuted,
   },
   statDiv: {
     width: 1,
     height: 18,
-    backgroundColor: colors.borderDark,
+    backgroundColor: '#E2E8F0',
+  },
+  visitsQuickLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F0F9FF',
+    borderRadius: spacing.borderRadiusSm,
+    padding: 8,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+  },
+  visitsQuickLinkLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  calIconBox: {
+    width: 30,
+    height: 30,
+    borderRadius: 6,
+    backgroundColor: '#E0F2FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  visitsQuickLinkTitle: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.bold,
+    color: colors.primary,
+  },
+  visitsQuickLinkSub: {
+    fontSize: typography.sizes.xxs,
+    color: colors.textMuted,
+    marginTop: 1,
   },
   sectionHeader: {
-    marginTop: 6,
+    marginTop: 8,
     marginBottom: 4,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   sectionTitleRow: {
     flexDirection: 'row',
@@ -417,46 +456,57 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.xxs,
     color: colors.textMuted,
   },
+  viewAllVisitsLink: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.bold,
+    color: colors.primary,
+  },
   activePatientCard: {
-    backgroundColor: '#F0FDF4',
-    borderColor: '#86EFAC',
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+    padding: 10,
     marginBottom: 8,
   },
   activeTopRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
+    justifyContent: 'space-between',
   },
   tokenHighlight: {
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.sm,
     fontWeight: typography.weights.extraBold,
     color: colors.primary,
   },
   activePatientName: {
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.text,
+    marginTop: 1,
   },
   activePatientMeta: {
-    fontSize: typography.sizes.xs,
-    color: colors.textSecondary,
-    marginTop: 2,
+    fontSize: typography.sizes.xxs,
+    color: colors.textMuted,
+    marginTop: 1,
   },
   reasonBox: {
-    backgroundColor: colors.white,
+    backgroundColor: '#F8FAFC',
     padding: 8,
     borderRadius: 6,
-    marginVertical: 8,
+    marginTop: 6,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   reasonLbl: {
     fontSize: typography.sizes.xxs,
-    fontWeight: typography.weights.bold,
     color: colors.textMuted,
+    fontWeight: typography.weights.semiBold,
   },
   reasonVal: {
     fontSize: typography.sizes.xs,
     color: colors.text,
-    fontWeight: typography.weights.medium,
     marginTop: 2,
   },
   activeActionsRow: {
@@ -468,44 +518,68 @@ const styles = StyleSheet.create({
   },
   noActiveCard: {
     backgroundColor: colors.white,
-    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 14,
     alignItems: 'center',
     marginBottom: 8,
   },
   noActiveTitle: {
-    fontSize: typography.sizes.base,
+    fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
-    color: colors.text,
+    color: colors.textSecondary,
   },
   noActiveSub: {
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes.xxs,
     color: colors.textMuted,
-    marginTop: 3,
     textAlign: 'center',
+    marginTop: 2,
   },
   callNextBtn: {
-    marginVertical: 4,
+    marginBottom: 8,
+  },
+  emptyBox: {
+    backgroundColor: colors.white,
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  emptyText: {
+    fontSize: typography.sizes.xs,
+    color: colors.textMuted,
   },
   waitingCard: {
+    backgroundColor: colors.white,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 8,
     marginBottom: 6,
   },
   waitingRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   queueIndexBox: {
     alignItems: 'center',
-    marginRight: 10,
-    minWidth: 48,
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    borderRadius: 6,
+    minWidth: 46,
   },
   queueIndexText: {
-    fontSize: typography.sizes.xxs,
+    fontSize: 9,
     color: colors.textMuted,
     fontWeight: typography.weights.bold,
   },
   queueTokenBadge: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.extraBold,
+    fontSize: 10,
+    fontWeight: typography.weights.bold,
     color: colors.primary,
   },
   waitingInfo: {
@@ -517,97 +591,44 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   waitingName: {
-    fontSize: typography.sizes.base,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
   waitingMeta: {
-    fontSize: typography.sizes.xxs,
+    fontSize: 9,
     color: colors.textMuted,
   },
   waitingReason: {
-    fontSize: typography.sizes.xs,
+    fontSize: 9.5,
     color: colors.textSecondary,
-    fontStyle: 'italic',
+    marginTop: 1,
   },
-  waitingActionCol: {
-    marginLeft: 8,
-  },
+  waitingActionCol: {},
   miniBtn: {
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-  },
-  emptyBox: {
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: typography.sizes.xs,
-    color: colors.textMuted,
+    minWidth: 60,
   },
   completedCard: {
+    backgroundColor: colors.white,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 8,
     marginBottom: 6,
-    backgroundColor: '#F8FAFC',
   },
   completedRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   completedName: {
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
   completedSub: {
-    fontSize: typography.sizes.xxs,
-    color: colors.textMuted,
-  },
-  visitsQuickLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#F0FDF4',
-    borderWidth: 1,
-    borderColor: '#BBF7D0',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginTop: 10,
-  },
-  visitsQuickLinkLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-  },
-  visitsQuickLinkIcon: {
-    fontSize: 20,
-  },
-  visitsQuickLinkTitle: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
-    color: colors.secondaryDark,
-  },
-  visitsQuickLinkSub: {
-    fontSize: typography.sizes.xxs,
+    fontSize: 9,
     color: colors.textMuted,
     marginTop: 1,
-  },
-  visitsQuickLinkArrow: {
-    fontSize: 16,
-    color: colors.secondaryDark,
-    fontWeight: typography.weights.bold,
-    marginLeft: 8,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  viewAllVisitsLink: {
-    fontSize: typography.sizes.xxs + 1,
-    fontWeight: typography.weights.semiBold,
-    color: colors.secondaryDark,
   },
 });

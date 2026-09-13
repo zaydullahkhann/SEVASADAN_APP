@@ -128,12 +128,12 @@ export const Step6ConfirmationToken: React.FC<Step6Props> = ({
           {/* QR Code Graphic Simulation */}
           <View style={styles.qrContainer}>
             <View style={styles.qrMock}>
-              <Text style={styles.qrGlyphs}>█▀▀▀█ ▄ █▀▀▀█{'\n'}█ █ █ █ █ █ █{'\n'}█▄▄▄█ ▄ █▄▄▄█{'\n'}▄▄▄▄▄ ▄▄ ▄▄ ▄{'\n'}█▀▀▀█ █ ▄█▄ █{'\n'}█▄▄▄█ █▄█ ▄▀▄</Text>
+              <Icon name="token" size={28} color={colors.primary} />
             </View>
             <View style={styles.qrInfo}>
-              <Text style={styles.qrCodeTitle}>Instant Scanner Pass</Text>
+              <Text style={styles.qrCodeTitle}>Official Hospital Digital Token</Text>
               <Text style={styles.qrCodeDesc}>
-                Show this barcode at Sarangpur/Rajgarh reception counter or scan to check in
+                Show this token at Sarangpur/Rajgarh reception counter or scan for chamber entry
               </Text>
             </View>
           </View>

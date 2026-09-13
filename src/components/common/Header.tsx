@@ -11,7 +11,8 @@ import {
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { Icon } from './Icon';
+import { Icon, IconName } from './Icon';
+import { HospitalLogo } from './HospitalLogo';
 import { useApp } from '../../context/AppContext';
 import { CLINICS } from '../../data/clinics';
 
@@ -50,14 +51,14 @@ export const Header: React.FC = () => {
     );
   };
 
-  const getRoleLabel = () => {
+  const getRoleLabel = (): { label: string; icon: IconName; bg: string; text: string } | null => {
     switch (activeRole) {
       case 'DOCTOR':
-        return { label: 'Dr. Ankur (Doctor)', icon: '🩺', bg: '#D1FAE5', text: '#065F46' };
+        return { label: 'Dr. Ankur (Doctor)', icon: 'stethoscope', bg: '#D1FAE5', text: '#065F46' };
       case 'FRONT_DESK':
-        return { label: 'Front Desk', icon: '🖥️', bg: '#FEF3C7', text: '#92400E' };
+        return { label: 'Front Desk', icon: 'desk', bg: '#FEF3C7', text: '#92400E' };
       case 'ADMIN':
-        return { label: 'Hospital Admin', icon: '🛡️', bg: '#EDE9FE', text: '#5B21B6' };
+        return { label: 'Hospital Admin', icon: 'shield-check', bg: '#EDE9FE', text: '#5B21B6' };
       case 'PATIENT':
       default:
         return null;
@@ -71,24 +72,22 @@ export const Header: React.FC = () => {
       {/* Top Main Bar */}
       <View style={styles.topRow}>
         <View style={styles.brandContainer}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoSymbol}>➕</Text>
-          </View>
+          <HospitalLogo size={32} badgeBg="#FFFFFF" color={colors.primary} style={styles.logoBadge} />
           <View>
             <View style={styles.titleRow}>
               <Text style={styles.brandTitle}>SEVASADAN</Text>
               <View style={styles.tagBadge}>
-                <Text style={styles.tagText}>SUPER SPECIALTY OPD</Text>
+                <Text style={styles.tagText}>NABH LEVEL</Text>
               </View>
             </View>
             <Text style={styles.brandSubtitle}>
               {activeRole === 'DOCTOR'
                 ? 'Doctor Consultation Portal'
                 : activeRole === 'FRONT_DESK'
-                ? 'OPD Counter & Reception Desk'
+                ? 'Reception & Registration Desk'
                 : activeRole === 'ADMIN'
-                ? 'Executive Hospital Control Panel'
-                : 'Dr. Ankur Deshwali & Specialist Network'}
+                ? 'Administration & Analytics'
+                : 'Superspeciality Hospital & OPD'}
             </Text>
           </View>
         </View>
@@ -97,7 +96,7 @@ export const Header: React.FC = () => {
         <View style={styles.actionsRow}>
           {roleInfo && (
             <View style={[styles.roleBadge, { backgroundColor: roleInfo.bg }]}>
-              <Text style={styles.roleIcon}>{roleInfo.icon}</Text>
+              <Icon name={roleInfo.icon} size={11} color={roleInfo.text} />
               <Text style={[styles.roleLabelText, { color: roleInfo.text }]}>
                 {roleInfo.label}
               </Text>
@@ -114,6 +113,7 @@ export const Header: React.FC = () => {
             }}
             style={styles.logoutBtn}
           >
+            <Icon name="log-out" size={11} color={colors.white} />
             <Text style={styles.logoutBtnText}>Exit</Text>
           </TouchableOpacity>
 
@@ -143,6 +143,11 @@ export const Header: React.FC = () => {
                 selectedBranchId === 'all' && styles.chipActive,
               ]}
             >
+              <Icon
+                name="hospital"
+                size={11}
+                color={selectedBranchId === 'all' ? colors.primaryDark : colors.white}
+              />
               <Text
                 style={[
                   styles.chipText,
@@ -164,7 +169,7 @@ export const Header: React.FC = () => {
                   <View
                     style={[
                       styles.statusDot,
-                      { backgroundColor: isActive ? colors.white : colors.secondary },
+                      { backgroundColor: isActive ? colors.primaryDark : colors.secondary },
                     ]}
                   />
                   <Text
@@ -249,7 +254,7 @@ export const Header: React.FC = () => {
       {activeRole === 'ADMIN' && (
         <View style={styles.adminSubBar}>
           <Text style={styles.adminStatusText}>
-            ⚡ Real-time Multi-Branch Hospital Network Management & Telemedicine Hub
+            Real-time Multi-Branch Hospital Network Management & Telemedicine Hub
           </Text>
         </View>
       )}
@@ -278,17 +283,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   logoBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 7,
-    backgroundColor: colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginRight: 8,
-  },
-  logoSymbol: {
-    fontSize: 14,
-    color: colors.primary,
   },
   titleRow: {
     flexDirection: 'row',
@@ -299,17 +294,17 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.base,
     fontWeight: typography.weights.extraBold,
     color: colors.white,
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
   tagBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    paddingHorizontal: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: 4,
   },
   tagText: {
     color: colors.accent,
-    fontSize: typography.sizes.xxs,
+    fontSize: 9,
     fontWeight: typography.weights.bold,
   },
   brandSubtitle: {
@@ -328,20 +323,20 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     paddingHorizontal: 6,
     borderRadius: 6,
-    gap: 3,
-  },
-  roleIcon: {
-    fontSize: 11,
+    gap: 4,
   },
   roleLabelText: {
     fontSize: typography.sizes.xxs,
     fontWeight: typography.weights.bold,
   },
   logoutBtn: {
-    paddingVertical: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
     paddingHorizontal: 6,
     borderRadius: 4,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    gap: 3,
   },
   logoutBtnText: {
     color: colors.white,
@@ -353,9 +348,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.danger,
     paddingVertical: 4,
-    paddingHorizontal: 6,
+    paddingHorizontal: 7,
     borderRadius: 6,
-    gap: 2,
+    gap: 3,
   },
   emergencyText: {
     color: colors.white,
@@ -363,7 +358,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.bold,
   },
   subBar: {
-    paddingVertical: 4,
+    paddingVertical: 5,
     backgroundColor: colors.primaryDark,
   },
   scrollContent: {
@@ -374,18 +369,18 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 3,
-    paddingHorizontal: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
     borderRadius: 999,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    gap: 4,
+    gap: 5,
   },
   chipActive: {
     backgroundColor: colors.accent,
   },
   statusDot: {
-    width: 5,
-    height: 5,
+    width: 6,
+    height: 6,
     borderRadius: 3,
   },
   chipText: {
@@ -451,11 +446,11 @@ const styles = StyleSheet.create({
   },
   adminSubBar: {
     paddingHorizontal: spacing.screenPaddingHorizontal,
-    paddingVertical: 3,
+    paddingVertical: 4,
     backgroundColor: colors.primaryDark,
   },
   adminStatusText: {
-    fontSize: 9,
+    fontSize: 10,
     color: colors.accent,
     fontWeight: typography.weights.medium,
   },

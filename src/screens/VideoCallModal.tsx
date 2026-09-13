@@ -12,6 +12,7 @@ import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
 import { useApp } from '../context/AppContext';
 import { Icon } from '../components/common/Icon';
+import { DoctorAvatar } from '../components/common/DoctorAvatar';
 import { Badge } from '../components/common/Badge';
 import {
   LIVEKIT_CONFIG,
@@ -253,9 +254,11 @@ export const VideoCallModal: React.FC = () => {
             renderFallbackAvatar={() => (
               <View style={styles.doctorVideoFrame}>
                 <View style={styles.doctorAvatarBox}>
-                  <Text style={styles.doctorAvatarEmoji}>
-                    {isDoctorRole ? '👤' : '👨‍⚕️'}
-                  </Text>
+                  {isDoctorRole ? (
+                    <Icon name="user" size={44} color={colors.primary} />
+                  ) : (
+                    <DoctorAvatar gender="male" size={72} isHeadSurgeon={true} />
+                  )}
                   <View style={styles.speakingIndicator}>
                     <Text style={styles.speakingWave}>
                       ● {isDoctorRole ? 'Waiting for Patient...' : 'Dr. Ankur Speaking'}
@@ -293,7 +296,7 @@ export const VideoCallModal: React.FC = () => {
                 ]}
               />
               <Text style={styles.liveKitPillText}>
-                {liveKitToken ? 'LiveKit HD' : isLiveKitActive ? 'LiveKit SFU' : 'LiveKit ⚙️'}
+                {liveKitToken ? 'LiveKit HD' : isLiveKitActive ? 'LiveKit SFU' : 'LiveKit Setup'}
               </Text>
             </TouchableOpacity>
 
@@ -320,9 +323,11 @@ export const VideoCallModal: React.FC = () => {
               </View>
             ) : (
               <View style={styles.pipVideoOn}>
-                <Text style={styles.pipPatientEmoji}>
-                  {isDoctorRole ? '👨‍⚕️' : '👤'}
-                </Text>
+                {isDoctorRole ? (
+                  <DoctorAvatar gender="male" size={40} isHeadSurgeon={true} />
+                ) : (
+                  <Icon name="user" size={24} color={colors.primary} />
+                )}
                 <Text style={styles.pipLabel}>You (HD)</Text>
               </View>
             )}

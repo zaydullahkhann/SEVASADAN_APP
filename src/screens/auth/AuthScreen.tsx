@@ -16,7 +16,8 @@ import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { useApp } from '../../context/AppContext';
 import { UserRole, DEMO_CREDENTIALS } from '../../types';
-import { Icon } from '../../components/common/Icon';
+import { Icon, IconName } from '../../components/common/Icon';
+import { HospitalLogo } from '../../components/common/HospitalLogo';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 
@@ -107,11 +108,11 @@ export const AuthScreen: React.FC = () => {
     });
   };
 
-  const rolesConfig: { role: UserRole; label: string; icon: string }[] = [
-    { role: 'PATIENT', label: 'Patient', icon: '👤' },
-    { role: 'DOCTOR', label: 'Doctor', icon: '🩺' },
-    { role: 'FRONT_DESK', label: 'Front Desk', icon: '🖥️' },
-    { role: 'ADMIN', label: 'Admin', icon: '🛡️' },
+  const rolesConfig: { role: UserRole; label: string; icon: IconName }[] = [
+    { role: 'PATIENT', label: 'Patient', icon: 'user' },
+    { role: 'DOCTOR', label: 'Doctor', icon: 'stethoscope' },
+    { role: 'FRONT_DESK', label: 'Front Desk', icon: 'desk' },
+    { role: 'ADMIN', label: 'Admin', icon: 'shield-check' },
   ];
 
   return (
@@ -127,9 +128,7 @@ export const AuthScreen: React.FC = () => {
       >
         {/* Brand Banner */}
         <View style={styles.brandHero}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoSymbol}>➕</Text>
-          </View>
+          <HospitalLogo size={46} badgeBg="#FFFFFF" color={colors.primary} style={styles.logoBadge} />
           <Text style={styles.brandName}>SEVASADAN</Text>
           <Text style={styles.brandTag}>
             SUPER SPECIALTY OPD & TELEMEDICINE NETWORK
@@ -198,7 +197,11 @@ export const AuthScreen: React.FC = () => {
                         isSelected && styles.roleChipActive,
                       ]}
                     >
-                      <Text style={styles.roleChipIcon}>{item.icon}</Text>
+                      <Icon
+                        name={item.icon}
+                        size={13}
+                        color={isSelected ? colors.primary : colors.textSecondary}
+                      />
                       <Text
                         style={[
                           styles.roleChipText,
@@ -307,7 +310,7 @@ export const AuthScreen: React.FC = () => {
           ) : (
             /* 2. REGISTER NEW PATIENT MODE */
             <View style={styles.formContainer}>
-              <Text style={styles.regTitle}>Create SevaArogyam Patient Profile</Text>
+              <Text style={styles.regTitle}>Create Sevasadan Patient Profile</Text>
               <Text style={styles.regSubtitle}>
                 Get your digital UHID for In-Clinic OPD passes & Video Telemedicine
               </Text>
@@ -411,7 +414,7 @@ export const AuthScreen: React.FC = () => {
           )}
         </View>
 
-        {/* 24x7 Emergency Help Bar - Tapping directly dials/opens call dialer */}
+        {/* 24x7 Emergency Help Bar */}
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={handleCallHelpline}
@@ -428,7 +431,7 @@ export const AuthScreen: React.FC = () => {
               Toll-Free: <Text style={styles.helplineNumHighlight}>1800-7382-723</Text> • Tap to Call
             </Text>
           </View>
-          <Icon name="chevron-right" size={16} color={colors.accent} />
+          <Icon name="chevron-right" size={14} color={colors.accent} />
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -454,22 +457,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   logoBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  logoSymbol: {
-    fontSize: 22,
-    color: colors.primary,
   },
   brandName: {
     fontSize: typography.sizes.xl,
@@ -560,14 +548,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceSecondary,
     borderWidth: 1.5,
     borderColor: colors.border,
-    gap: 3,
+    gap: 4,
   },
   roleChipActive: {
     borderColor: colors.primary,
     backgroundColor: colors.primaryLight,
-  },
-  roleChipIcon: {
-    fontSize: 12,
   },
   roleChipText: {
     fontSize: typography.sizes.xxs,

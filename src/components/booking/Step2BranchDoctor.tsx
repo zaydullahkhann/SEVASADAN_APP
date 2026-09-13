@@ -13,6 +13,7 @@ import { ConsultationMode } from '../../types';
 import { CLINICS } from '../../data/clinics';
 import { DOCTORS } from '../../data/doctors';
 import { Icon } from '../common/Icon';
+import { DoctorAvatar } from '../common/DoctorAvatar';
 import { Badge } from '../common/Badge';
 
 interface Step2Props {
@@ -115,6 +116,7 @@ export const Step2BranchDoctor: React.FC<Step2Props> = ({
           {filteredDoctors.map((doc) => {
             const isSelected = selectedDoctorId === doc.id;
             const fee = isOnline ? doc.consultationFeeOnline : doc.consultationFeeClinic;
+            const isFemale = doc.id === 'doc-anjali';
 
             return (
               <TouchableOpacity
@@ -128,18 +130,11 @@ export const Step2BranchDoctor: React.FC<Step2Props> = ({
                 ]}
               >
                 <View style={styles.doctorRow}>
-                  <View
-                    style={[
-                      styles.avatarBox,
-                      doc.isHeadSurgeon && styles.headAvatarBox,
-                    ]}
-                  >
-                    <Icon
-                      name={doc.isHeadSurgeon ? 'baby' : 'stethoscope'}
-                      size={20}
-                      color={doc.isHeadSurgeon ? colors.white : colors.primary}
-                    />
-                  </View>
+                  <DoctorAvatar
+                    gender={isFemale ? 'female' : 'male'}
+                    size={46}
+                    isHeadSurgeon={!!doc.isHeadSurgeon}
+                  />
 
                   <View style={styles.docInfo}>
                     <View style={styles.nameRow}>
@@ -195,8 +190,9 @@ export const Step2BranchDoctor: React.FC<Step2Props> = ({
 
                 {doc.isHeadSurgeon && (
                   <View style={styles.headTagBanner}>
+                    <Icon name="award" size={11} color={colors.primaryDeep} />
                     <Text style={styles.headTagText}>
-                      ⭐ 3× MPPSC Class-I Specialist • Newborn & Laparoscopic Expert
+                      3× MPPSC Class-I Specialist • Newborn & Laparoscopic Expert
                     </Text>
                   </View>
                 )}
@@ -303,20 +299,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  avatarBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  headAvatarBox: {
-    backgroundColor: colors.primary,
-  },
   docInfo: {
     flex: 1,
+    marginLeft: 10,
   },
   nameRow: {
     flexDirection: 'row',
@@ -403,8 +388,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   headTagBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     marginTop: 6,
-    paddingVertical: 2,
+    paddingVertical: 3,
     paddingHorizontal: 6,
     backgroundColor: colors.accentLight,
     borderRadius: 4,

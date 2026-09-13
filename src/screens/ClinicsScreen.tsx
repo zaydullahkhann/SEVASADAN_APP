@@ -129,7 +129,6 @@ export const ClinicsScreen: React.FC = () => {
                 {coveringDoctors.map((doc) => (
                   <View key={doc.id} style={styles.docTag}>
                     <Text style={styles.docTagText}>
-                      {doc.isHeadSurgeon ? '⭐ ' : ''}
                       {doc.name.split(' ')[1]} ({doc.specialization.split(' ')[0]})
                     </Text>
                   </View>
