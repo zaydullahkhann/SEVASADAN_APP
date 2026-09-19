@@ -107,11 +107,8 @@ export const AppointmentsScreen: React.FC = () => {
     );
   };
 
-  const handleViewPass = (token: string, patient: string, doc: string, clinic: string) => {
-    Alert.alert(
-      `OPD Token Pass: ${token}`,
-      `Patient: ${patient}\nConsultant: ${doc}\nClinic: ${clinic}\nStatus: Confirmed\n\nPlease arrive 15 minutes before your estimated time.`
-    );
+  const handleViewPass = (apt: (typeof appointments)[0]) => {
+    setSelectedAptDetails(apt);
   };
 
   return (
@@ -396,14 +393,7 @@ export const AppointmentsScreen: React.FC = () => {
                     ) : activeRole === 'FRONT_DESK' ? (
                       <Button
                         title="Print Token Pass"
-                        onPress={() =>
-                          handleViewPass(
-                            apt.tokenNumber,
-                            apt.patientName,
-                            apt.doctorName,
-                            apt.clinicName
-                          )
-                        }
+                        onPress={() => handleViewPass(apt)}
                         variant="outline"
                         size="sm"
                         icon="receipt"
@@ -421,14 +411,7 @@ export const AppointmentsScreen: React.FC = () => {
                     ) : (
                       <Button
                         title="View Token Pass"
-                        onPress={() =>
-                          handleViewPass(
-                            apt.tokenNumber,
-                            apt.patientName,
-                            apt.doctorName,
-                            apt.clinicName
-                          )
-                        }
+                        onPress={() => handleViewPass(apt)}
                         variant="outline"
                         size="sm"
                         icon="receipt"
@@ -529,12 +512,38 @@ export const AppointmentsScreen: React.FC = () => {
 
               <View style={styles.modalFooter}>
                 <Button
-                  title="Close"
-                  onPress={() => setSelectedAptDetails(null)}
+                  title="Share Pass"
+                  onPress={() => {
+                    Alert.alert('Pass Shared', `OPD Token Pass #${selectedAptDetails.tokenNumber} shared.`);
+                  }}
                   variant="outline"
                   size="md"
-                  fullWidth
+                  icon="share"
+                  style={{ flex: 1 }}
                 />
+                {selectedAptDetails.consultationMode === 'ONLINE_VIDEO' ? (
+                  <Button
+                    title="Join Video"
+                    onPress={() => {
+                      const apt = selectedAptDetails;
+                      setSelectedAptDetails(null);
+                      openVideoCall(apt);
+                    }}
+                    variant="accent"
+                    size="md"
+                    icon="video"
+                    style={{ flex: 1.2 }}
+                  />
+                ) : (
+                  <Button
+                    title="Done"
+                    onPress={() => setSelectedAptDetails(null)}
+                    variant="primary"
+                    size="md"
+                    icon="check"
+                    style={{ flex: 1 }}
+                  />
+                )}
               </View>
             </View>
           </View>

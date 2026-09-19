@@ -1,20 +1,21 @@
 export const colors = {
   primary: '#0F4C81',
-  primaryDark: '#0B2545',
-  primaryDeep: '#0A365C',
-  primaryLight: '#E8F1F8',
-  
-  secondary: '#10B981',
-  secondaryDark: '#059669',
-  secondaryLight: '#D1FAE5',
+  primaryDark: '#0A365C',
+  primaryDeep: '#07243E',
+  primaryLight: '#EFF6FF',
 
-  accent: '#38BDF8',
-  accentLight: '#E0F2FE',
+  secondary: '#0D9488',
+  secondaryDark: '#0F766E',
+  secondaryLight: '#F0FDFA',
+
+  accent: '#0284C7',
+  accentLight: '#F0F9FF',
 
   background: '#F8FAFC',
   card: '#FFFFFF',
   surface: '#FFFFFF',
   surfaceSecondary: '#F1F5F9',
+  surfaceMuted: '#E2E8F0',
 
   text: '#0F172A',
   textSecondary: '#475569',
@@ -32,12 +33,13 @@ export const colors = {
   danger: '#EF4444',
   dangerLight: '#FEF2F2',
 
-  purple: '#8B5CF6',
+  purple: '#7C3AED',
   purpleLight: '#F5F3FF',
 
   // Shadow colors
-  shadow: 'rgba(15, 76, 129, 0.08)',
-  shadowDark: 'rgba(11, 37, 69, 0.16)',
+  shadow: 'rgba(15, 23, 42, 0.06)',
+  shadowDark: 'rgba(15, 23, 42, 0.12)',
 };
 
 export type ColorsType = typeof colors;
+

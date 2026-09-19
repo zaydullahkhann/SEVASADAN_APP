@@ -19,8 +19,6 @@ import { CLINICS } from '../../data/clinics';
 export const Header: React.FC = () => {
   const {
     activeRole,
-    selectedBranchId,
-    setSelectedBranchId,
     activeDeskBranchId,
     setActiveDeskBranchId,
     doctors,
@@ -54,11 +52,11 @@ export const Header: React.FC = () => {
   const getRoleLabel = (): { label: string; icon: IconName; bg: string; text: string } | null => {
     switch (activeRole) {
       case 'DOCTOR':
-        return { label: 'Dr. Ankur (Doctor)', icon: 'stethoscope', bg: '#D1FAE5', text: '#065F46' };
+        return { label: 'Dr. Ankur', icon: 'stethoscope', bg: '#D1FAE5', text: '#065F46' };
       case 'FRONT_DESK':
-        return { label: 'Front Desk', icon: 'desk', bg: '#FEF3C7', text: '#92400E' };
+        return { label: 'Reception', icon: 'desk', bg: '#FEF3C7', text: '#92400E' };
       case 'ADMIN':
-        return { label: 'Hospital Admin', icon: 'shield-check', bg: '#EDE9FE', text: '#5B21B6' };
+        return { label: 'Admin', icon: 'shield-check', bg: '#EDE9FE', text: '#5B21B6' };
       case 'PATIENT':
       default:
         return null;
@@ -72,22 +70,17 @@ export const Header: React.FC = () => {
       {/* Top Main Bar */}
       <View style={styles.topRow}>
         <View style={styles.brandContainer}>
-          <HospitalLogo size={32} badgeBg="#FFFFFF" color={colors.primary} style={styles.logoBadge} />
+          <HospitalLogo size={30} badgeBg="#FFFFFF" color={colors.primary} style={styles.logoBadge} />
           <View>
-            <View style={styles.titleRow}>
-              <Text style={styles.brandTitle}>SEVASADAN</Text>
-              <View style={styles.tagBadge}>
-                <Text style={styles.tagText}>NABH LEVEL</Text>
-              </View>
-            </View>
+            <Text style={styles.brandTitle}>SEVASADAN</Text>
             <Text style={styles.brandSubtitle}>
               {activeRole === 'DOCTOR'
-                ? 'Doctor Consultation Portal'
+                ? 'Doctor Consultation'
                 : activeRole === 'FRONT_DESK'
-                ? 'Reception & Registration Desk'
+                ? 'Front Desk & Reception'
                 : activeRole === 'ADMIN'
-                ? 'Administration & Analytics'
-                : 'Superspeciality Hospital & OPD'}
+                ? 'Hospital Administration'
+                : 'Hospital & Tele-OPD'}
             </Text>
           </View>
         </View>
@@ -105,6 +98,15 @@ export const Header: React.FC = () => {
 
           <TouchableOpacity
             activeOpacity={0.8}
+            onPress={handleEmergencyCall}
+            style={styles.emergencyBtn}
+          >
+            <Icon name="phone" size={12} color={colors.white} />
+            <Text style={styles.emergencyText}>Emergency</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
             onPress={() => {
               Alert.alert('Sign Out', 'Sign out of this session and return to the Login screen?', [
                 { text: 'Cancel', style: 'cancel' },
@@ -113,84 +115,17 @@ export const Header: React.FC = () => {
             }}
             style={styles.logoutBtn}
           >
-            <Icon name="log-out" size={11} color={colors.white} />
-            <Text style={styles.logoutBtnText}>Exit</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={handleEmergencyCall}
-            style={styles.emergencyBtn}
-          >
-            <Icon name="phone" size={11} color={colors.white} />
-            <Text style={styles.emergencyText}>24x7</Text>
+            <Icon name="log-out" size={13} color="rgba(255,255,255,0.8)" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Sub-bar tailored to role */}
-      {activeRole === 'PATIENT' && (
-        <View style={styles.subBar}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-          >
-            <TouchableOpacity
-              onPress={() => setSelectedBranchId('all')}
-              style={[
-                styles.chip,
-                selectedBranchId === 'all' && styles.chipActive,
-              ]}
-            >
-              <Icon
-                name="hospital"
-                size={11}
-                color={selectedBranchId === 'all' ? colors.primaryDark : colors.white}
-              />
-              <Text
-                style={[
-                  styles.chipText,
-                  selectedBranchId === 'all' && styles.chipTextActive,
-                ]}
-              >
-                All 4 Branches
-              </Text>
-            </TouchableOpacity>
 
-            {CLINICS.map((clinic) => {
-              const isActive = selectedBranchId === clinic.id;
-              return (
-                <TouchableOpacity
-                  key={clinic.id}
-                  onPress={() => setSelectedBranchId(clinic.id)}
-                  style={[styles.chip, isActive && styles.chipActive]}
-                >
-                  <View
-                    style={[
-                      styles.statusDot,
-                      { backgroundColor: isActive ? colors.primaryDark : colors.secondary },
-                    ]}
-                  />
-                  <Text
-                    style={[
-                      styles.chipText,
-                      isActive && styles.chipTextActive,
-                    ]}
-                  >
-                    {clinic.shortName}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
-      )}
 
       {activeRole === 'DOCTOR' && (
         <View style={styles.doctorSubBar}>
           <View style={styles.dutyInfo}>
-            <Text style={styles.dutyLabel}>Duty Status:</Text>
+            <Text style={styles.dutyLabel}>Status:</Text>
             <TouchableOpacity
               onPress={() =>
                 setDoctorDuty(
@@ -208,14 +143,13 @@ export const Header: React.FC = () => {
               <View style={styles.dutyDot} />
               <Text style={styles.dutyBtnText}>
                 {currentDoctor.dutyStatus === 'AVAILABLE'
-                  ? 'Active in OPD (Ready)'
-                  : 'In OT / Surgery'}
+                  ? 'Active in OPD'
+                  : 'In Surgery / OT'}
               </Text>
             </TouchableOpacity>
           </View>
-
           <Text style={styles.docBranchSchedule}>
-            Assigned: Sarangpur & Rajgarh
+            Chamber 101 • Sarangpur
           </Text>
         </View>
       )}
@@ -227,7 +161,7 @@ export const Header: React.FC = () => {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
           >
-            <Text style={styles.deskCounterLabel}>Active Counter Desk:</Text>
+            <Text style={styles.deskCounterLabel}>Active Center:</Text>
             {CLINICS.map((clinic) => {
               const isActive = activeDeskBranchId === clinic.id;
               return (
@@ -242,7 +176,7 @@ export const Header: React.FC = () => {
                       isActive && styles.chipTextActive,
                     ]}
                   >
-                    {clinic.shortName} Counter
+                    {clinic.shortName}
                   </Text>
                 </TouchableOpacity>
               );
@@ -250,24 +184,17 @@ export const Header: React.FC = () => {
           </ScrollView>
         </View>
       )}
-
-      {activeRole === 'ADMIN' && (
-        <View style={styles.adminSubBar}>
-          <Text style={styles.adminStatusText}>
-            Real-time Multi-Branch Hospital Network Management & Telemedicine Hub
-          </Text>
-        </View>
-      )}
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.primary,
     borderBottomWidth: 1,
     borderBottomColor: colors.primaryDark,
-    paddingTop: 4,
+    paddingTop: 6,
     paddingBottom: 4,
   },
   topRow: {
@@ -285,43 +212,27 @@ const styles = StyleSheet.create({
   logoBadge: {
     marginRight: 8,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
   brandTitle: {
     fontSize: typography.sizes.base,
     fontWeight: typography.weights.extraBold,
     color: colors.white,
-    letterSpacing: 0.6,
-  },
-  tagBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 4,
-  },
-  tagText: {
-    color: colors.accent,
-    fontSize: 9,
-    fontWeight: typography.weights.bold,
+    letterSpacing: 0.5,
   },
   brandSubtitle: {
     fontSize: typography.sizes.xxs,
-    color: colors.primaryLight,
+    color: 'rgba(255, 255, 255, 0.75)',
     marginTop: 1,
   },
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
   },
   roleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 3,
-    paddingHorizontal: 6,
+    paddingHorizontal: 7,
     borderRadius: 6,
     gap: 4,
   },
@@ -330,27 +241,20 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.bold,
   },
   logoutBtn: {
-    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    gap: 3,
-  },
-  logoutBtnText: {
-    color: colors.white,
-    fontSize: typography.sizes.xxs,
-    fontWeight: typography.weights.bold,
+    justifyContent: 'center',
+    padding: 6,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   emergencyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.danger,
-    paddingVertical: 4,
-    paddingHorizontal: 7,
+    paddingVertical: 4.5,
+    paddingHorizontal: 8,
     borderRadius: 6,
-    gap: 3,
+    gap: 4,
   },
   emergencyText: {
     color: colors.white,
@@ -358,7 +262,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.bold,
   },
   subBar: {
-    paddingVertical: 5,
+    paddingVertical: 6,
     backgroundColor: colors.primaryDark,
   },
   scrollContent: {
@@ -370,22 +274,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 4,
-    paddingHorizontal: 9,
+    paddingHorizontal: 10,
     borderRadius: 999,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    gap: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   chipActive: {
-    backgroundColor: colors.accent,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    backgroundColor: colors.white,
   },
   chipText: {
     color: colors.white,
-    fontSize: typography.sizes.xs - 0.5,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.medium,
   },
   chipTextActive: {
@@ -397,7 +295,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.screenPaddingHorizontal,
-    paddingVertical: 4,
+    paddingVertical: 5,
     backgroundColor: colors.primaryDark,
   },
   dutyInfo: {
@@ -412,8 +310,8 @@ const styles = StyleSheet.create({
   dutyToggleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 2,
-    paddingHorizontal: 6,
+    paddingVertical: 3,
+    paddingHorizontal: 7,
     borderRadius: 4,
     gap: 4,
   },
@@ -431,12 +329,12 @@ const styles = StyleSheet.create({
   },
   dutyBtnText: {
     color: colors.white,
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: typography.weights.bold,
   },
   docBranchSchedule: {
-    fontSize: 9,
-    color: colors.accentLight,
+    fontSize: 10,
+    color: 'rgba(255, 255, 255, 0.8)',
   },
   deskCounterLabel: {
     fontSize: typography.sizes.xxs,
@@ -444,14 +342,5 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.bold,
     marginRight: 2,
   },
-  adminSubBar: {
-    paddingHorizontal: spacing.screenPaddingHorizontal,
-    paddingVertical: 4,
-    backgroundColor: colors.primaryDark,
-  },
-  adminStatusText: {
-    fontSize: 10,
-    color: colors.accent,
-    fontWeight: typography.weights.medium,
-  },
 });
+

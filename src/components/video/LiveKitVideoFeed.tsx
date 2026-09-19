@@ -310,7 +310,11 @@ export const LiveKitVideoFeed: React.FC<LiveKitVideoFeedProps> = ({
             </View>
           ) : (
             <View style={styles.pipOffBox}>
-              <Text style={styles.pipAvatarEmoji}>{cameraFacing === 'front' ? '👤' : '🔍'}</Text>
+              <Icon
+                name={cameraFacing === 'front' ? 'user' : 'camera'}
+                size={20}
+                color={colors.white}
+              />
               <Text style={styles.pipBadgeText} numberOfLines={1}>
                 {cameraFacing === 'front' ? 'You (Front)' : 'Wound Cam'}
               </Text>

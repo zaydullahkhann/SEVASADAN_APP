@@ -9,7 +9,9 @@ export type IconName =
   | 'phone'
   | 'video'
   | 'user'
+  | 'user-check'
   | 'location'
+  | 'map-pin'
   | 'check'
   | 'check-circle'
   | 'token'
@@ -19,6 +21,8 @@ export type IconName =
   | 'chevron-left'
   | 'chevron-down'
   | 'chevron-up'
+  | 'arrow-right'
+  | 'arrow-left'
   | 'star'
   | 'heart'
   | 'close'
@@ -32,10 +36,12 @@ export type IconName =
   | 'bone'
   | 'home'
   | 'receipt'
+  | 'file-text'
   | 'info'
   | 'mic'
   | 'mic-off'
   | 'video-off'
+  | 'camera'
   | 'switch-camera'
   | 'call-end'
   | 'sparkles'
@@ -48,6 +54,13 @@ export type IconName =
   | 'award'
   | 'log-out'
   | 'printer'
+  | 'download'
+  | 'share'
+  | 'eye'
+  | 'eye-off'
+  | 'help-circle'
+  | 'message-circle'
+  | 'zap'
   | 'shield-check';
 
 interface IconProps {
@@ -422,6 +435,117 @@ export const Icon: React.FC<IconProps> = ({
             <Path d="M6 9V2h12v7" />
             <Path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
             <Rect x="6" y="14" width="12" height="8" />
+          </G>
+        );
+
+      case 'camera':
+        return (
+          <G fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <Circle cx="12" cy="13" r="4" />
+          </G>
+        );
+
+      case 'map-pin':
+        return (
+          <G fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+            <Circle cx="12" cy="10" r="3" />
+          </G>
+        );
+
+      case 'user-check':
+        return (
+          <G fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <Circle cx="8.5" cy="7" r="4" />
+            <Path d="M17 11l2 2 4-4" strokeWidth="2" />
+          </G>
+        );
+
+      case 'file-text':
+        return (
+          <G fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <Path d="M14 2v6h6" />
+            <Line x1="16" y1="13" x2="8" y2="13" />
+            <Line x1="16" y1="17" x2="8" y2="17" />
+            <Line x1="10" y1="9" x2="8" y2="9" />
+          </G>
+        );
+
+      case 'arrow-right':
+        return (
+          <G fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <Line x1="5" y1="12" x2="19" y2="12" />
+            <Path d="M12 5l7 7-7 7" />
+          </G>
+        );
+
+      case 'arrow-left':
+        return (
+          <G fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <Line x1="19" y1="12" x2="5" y2="12" />
+            <Path d="M12 19l-7-7 7-7" />
+          </G>
+        );
+
+      case 'download':
+        return (
+          <G fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <Path d="M7 10l5 5 5-5" />
+            <Line x1="12" y1="15" x2="12" y2="3" />
+          </G>
+        );
+
+      case 'share':
+        return (
+          <G fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <Circle cx="18" cy="5" r="3" />
+            <Circle cx="6" cy="12" r="3" />
+            <Circle cx="18" cy="19" r="3" />
+            <Line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+            <Line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+          </G>
+        );
+
+      case 'eye':
+        return (
+          <G fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+            <Circle cx="12" cy="12" r="3" />
+          </G>
+        );
+
+      case 'eye-off':
+        return (
+          <G fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+            <Line x1="1" y1="1" x2="23" y2="23" strokeWidth="2" />
+          </G>
+        );
+
+      case 'help-circle':
+        return (
+          <G fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <Circle cx="12" cy="12" r="10" />
+            <Path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <Line x1="12" y1="17" x2="12.01" y2="17" strokeWidth="2.5" />
+          </G>
+        );
+
+      case 'message-circle':
+        return (
+          <G fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+          </G>
+        );
+
+      case 'zap':
+        return (
+          <G fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <Polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
           </G>
         );
 

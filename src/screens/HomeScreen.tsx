@@ -20,6 +20,7 @@ import { Icon, IconName } from '../components/common/Icon';
 import { DoctorAvatar } from '../components/common/DoctorAvatar';
 import { CompactCard } from '../components/common/CompactCard';
 import { Button } from '../components/common/Button';
+import { Badge } from '../components/common/Badge';
 
 export const HomeScreen: React.FC = () => {
   const {
@@ -27,10 +28,18 @@ export const HomeScreen: React.FC = () => {
     openBookingModal,
     queueStatuses,
     setActiveTab,
+    appointments,
+    openVideoCall,
   } = useApp();
 
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('all');
   const [profileModalDoctor, setProfileModalDoctor] = useState<(typeof DOCTORS)[0] | null>(null);
+  const [viewPassApt, setViewPassApt] = useState<(typeof appointments)[0] | null>(null);
+
+  // Active appointment for user if exists
+  const activeUserAppointment = appointments.find(
+    (a) => a.status === 'CONFIRMED' || a.status === 'IN_PROGRESS'
+  );
 
   // Filter clinics
   const activeClinic =
@@ -41,6 +50,10 @@ export const HomeScreen: React.FC = () => {
   const currentQueue = activeClinic
     ? queueStatuses[activeClinic.id]
     : queueStatuses.sarangpur;
+
+  const patientsAhead = activeUserAppointment
+    ? Math.max(0, activeUserAppointment.tokenIndex - (currentQueue?.currentServingIndex || 15))
+    : 0;
 
   // Filter doctors
   const filteredDoctors = DOCTORS.filter((doc) => {
@@ -65,8 +78,6 @@ export const HomeScreen: React.FC = () => {
     });
   };
 
-  const leadDoctor = DOCTORS.find((d) => d.id === 'doc-ankur') || DOCTORS[0];
-
   const getSpecialtyIcon = (specId: string): IconName => {
     switch (specId) {
       case 'pediatric':
@@ -88,201 +99,171 @@ export const HomeScreen: React.FC = () => {
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
-      {/* 1. Hospital Accreditation & Trust Bar */}
-      <View style={styles.trustBanner}>
-        <View style={styles.trustItem}>
-          <Icon name="shield-check" size={13} color={colors.primary} />
-          <Text style={styles.trustText}>NABH Standard OPD</Text>
-        </View>
-        <View style={styles.trustDivider} />
-        <View style={styles.trustItem}>
-          <Icon name="check-circle" size={13} color={colors.secondary} />
-          <Text style={styles.trustText}>MCI Certified Specialists</Text>
-        </View>
-        <View style={styles.trustDivider} />
-        <View style={styles.trustItem}>
-          <Icon name="clock" size={13} color={colors.primary} />
-          <Text style={styles.trustText}>24x7 Trauma Care</Text>
+      {/* 1. Welcoming Hero Banner */}
+      <View style={styles.heroBanner}>
+        <View style={styles.heroTextWrap}>
+          <View style={styles.heroTitleRow}>
+            <Text style={styles.heroGreeting}>Welcome to SEVASADAN</Text>
+            <View style={styles.onlineBadge}>
+              <Icon name="zap" size={10} color="#16A34A" />
+              <Text style={styles.onlineBadgeText}>OPD Active</Text>
+            </View>
+          </View>
+          <Text style={styles.heroSubtitle}>
+            Fast OPD tokens & superspecialist consultations across 4 hospital branches
+          </Text>
         </View>
       </View>
 
-      {/* 2. Primary Consultation Mode Action Cards */}
-      <View style={styles.heroActionGrid}>
-        {/* Card 1: Hospital Visit */}
-        <TouchableOpacity
-          activeOpacity={0.88}
-          onPress={() => openBookingModal({ consultationMode: 'IN_CLINIC' })}
-          style={[styles.bigActionCard, styles.inClinicCard]}
-        >
-          <View style={styles.cardHeaderRow}>
-            <View style={[styles.actionIconCircle, { backgroundColor: colors.primary }]}>
-              <Icon name="hospital" size={20} color={colors.white} />
+      {/* 2. Prominent Active Token Tracker (If customer has an active booking) */}
+      {activeUserAppointment && (
+        <View style={styles.activeTokenCard}>
+          <View style={styles.activeTokenHeader}>
+            <View style={styles.activeTokenHeaderLeft}>
+              <View style={styles.pulsingDot}>
+                <View style={styles.pulsingDotInner} />
+              </View>
+              <Text style={styles.activeTokenHeaderTitle}>Your Live OPD Token</Text>
             </View>
-            <View style={styles.modeBadge}>
-              <Text style={styles.modeBadgeText}>OPD Token</Text>
-            </View>
+            <Badge
+              label={
+                activeUserAppointment.consultationMode === 'ONLINE_VIDEO'
+                  ? 'Video Call'
+                  : 'Hospital OPD'
+              }
+              variant={activeUserAppointment.consultationMode === 'ONLINE_VIDEO' ? 'accent' : 'primary'}
+              size="sm"
+            />
           </View>
-          <View style={styles.cardBodyWrap}>
-            <Text style={styles.actionCardTitle}>Visit Hospital</Text>
-            <Text style={styles.actionCardDesc}>
-              Instant token for doctor chamber checkup & diagnostics
-            </Text>
-          </View>
-          <View style={styles.actionPill}>
-            <Text style={styles.actionPillText}>Book Token</Text>
-            <Icon name="chevron-right" size={12} color={colors.primary} />
-          </View>
-        </TouchableOpacity>
 
-        {/* Card 2: Video Call */}
-        <TouchableOpacity
-          activeOpacity={0.88}
-          onPress={() => openBookingModal({ consultationMode: 'ONLINE_VIDEO' })}
-          style={[styles.bigActionCard, styles.teleCard]}
-        >
-          <View style={styles.cardHeaderRow}>
-            <View style={[styles.actionIconCircle, { backgroundColor: '#0D9488' }]}>
-              <Icon name="video" size={20} color={colors.white} />
+          <View style={styles.activeTokenBody}>
+            <View style={styles.tokenNumberBox}>
+              <Text style={styles.tokenNumberLabel}>TOKEN</Text>
+              <Text style={styles.tokenNumberValue}>{activeUserAppointment.tokenNumber}</Text>
             </View>
-            <View style={[styles.modeBadge, { backgroundColor: '#D1FAE5' }]}>
-              <Text style={[styles.modeBadgeText, { color: '#065F46' }]}>Live Call</Text>
-            </View>
-          </View>
-          <View style={styles.cardBodyWrap}>
-            <Text style={styles.actionCardTitle}>Doctor Video Call</Text>
-            <Text style={styles.actionCardDesc}>
-              HD Tele-consultation & Digital Rx with specialists
-            </Text>
-          </View>
-          <View style={[styles.actionPill, { backgroundColor: '#DCFCE7' }]}>
-            <Text style={[styles.actionPillText, { color: '#065F46' }]}>Start Call</Text>
-            <Icon name="chevron-right" size={12} color="#065F46" />
-          </View>
-        </TouchableOpacity>
-      </View>
 
-      {/* 3. Live OPD Chamber & Queue Status Banner */}
-      <TouchableOpacity
-        activeOpacity={0.88}
-        onPress={() => setActiveTab('appointments')}
-        style={styles.queueBanner}
-      >
-        <View style={styles.queueBannerLeft}>
-          <View style={styles.pulseContainer}>
-            <View style={styles.pulseDot} />
-          </View>
-          <View>
-            <View style={styles.queueHeaderRow}>
-              <Text style={styles.queueBranchName}>
-                {activeClinic ? activeClinic.shortName : 'Sarangpur'} OPD Chamber
+            <View style={styles.activeTokenDetails}>
+              <Text style={styles.activeTokenDoctor}>{activeUserAppointment.doctorName}</Text>
+              <Text style={styles.activeTokenClinic}>
+                {activeUserAppointment.clinicName} • {activeUserAppointment.date} ({activeUserAppointment.timeSlot})
               </Text>
-              <View style={styles.liveTag}>
-                <Text style={styles.liveTagText}>LIVE</Text>
+              <View style={styles.queueStatusRow}>
+                <Icon name="clock" size={12} color={colors.primary} />
+                <Text style={styles.queueStatusText}>
+                  Now Serving: <Text style={{ fontWeight: 'bold' }}>#{currentQueue?.currentServingToken || 'SAR-015'}</Text>
+                  {patientsAhead > 0 ? ` • ${patientsAhead} ahead (~${patientsAhead * 8} min)` : ' • Your Turn Next!'}
+                </Text>
               </View>
             </View>
-            <Text style={styles.queueBannerNumber}>
-              Now Serving Token: <Text style={styles.tokenHighlight}>#{currentQueue?.currentServingToken || 'SAR-015'}</Text>
+          </View>
+
+          <View style={styles.activeTokenActions}>
+            <TouchableOpacity
+              style={styles.passActionBtn}
+              onPress={() => setViewPassApt(activeUserAppointment)}
+              activeOpacity={0.8}
+            >
+              <Icon name="receipt" size={14} color={colors.primary} />
+              <Text style={styles.passActionBtnText}>View Token Pass</Text>
+            </TouchableOpacity>
+
+            {activeUserAppointment.consultationMode === 'ONLINE_VIDEO' ? (
+              <TouchableOpacity
+                style={[styles.passActionBtn, styles.passActionBtnPrimary]}
+                onPress={() => openVideoCall(activeUserAppointment)}
+                activeOpacity={0.8}
+              >
+                <Icon name="video" size={14} color={colors.white} />
+                <Text style={[styles.passActionBtnText, { color: colors.white }]}>Join Video Call</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.passActionBtn, styles.passActionBtnSecondary]}
+                onPress={() => setActiveTab('appointments')}
+                activeOpacity={0.8}
+              >
+                <Icon name="token" size={14} color={colors.secondaryDark} />
+                <Text style={[styles.passActionBtnText, { color: colors.secondaryDark }]}>Live Queue Tracker</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
+
+      {/* 3. Primary Consultation Action Cards (Simplified 2-Card Layout) */}
+      <View style={styles.actionGrid}>
+        {/* In-Clinic Visit */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => openBookingModal({ consultationMode: 'IN_CLINIC' })}
+          style={[styles.actionCard, styles.inClinicCard]}
+        >
+          <View style={[styles.actionIconBadge, { backgroundColor: colors.primary }]}>
+            <Icon name="hospital" size={22} color={colors.white} />
+          </View>
+          <View style={styles.actionCardContent}>
+            <Text style={styles.actionTitle}>Book Hospital Visit</Text>
+            <Text style={styles.actionDesc}>Get OPD Token for Doctor Chamber</Text>
+          </View>
+          <View style={styles.actionButtonPill}>
+            <Text style={styles.actionButtonText}>Get Token</Text>
+            <Icon name="arrow-right" size={12} color={colors.primary} />
+          </View>
+        </TouchableOpacity>
+
+        {/* Video Consult */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => openBookingModal({ consultationMode: 'ONLINE_VIDEO' })}
+          style={[styles.actionCard, styles.videoCard]}
+        >
+          <View style={[styles.actionIconBadge, { backgroundColor: colors.secondary }]}>
+            <Icon name="video" size={22} color={colors.white} />
+          </View>
+          <View style={styles.actionCardContent}>
+            <Text style={styles.actionTitle}>Video Consultation</Text>
+            <Text style={styles.actionDesc}>Consult Specialists Online from Home</Text>
+          </View>
+          <View style={[styles.actionButtonPill, { backgroundColor: colors.secondaryLight }]}>
+            <Text style={[styles.actionButtonText, { color: colors.secondaryDark }]}>Consult Online</Text>
+            <Icon name="arrow-right" size={12} color={colors.secondaryDark} />
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      {/* 3. Live OPD Queue Status */}
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => setActiveTab('appointments')}
+        style={styles.liveQueueCard}
+      >
+        <View style={styles.liveQueueLeft}>
+          <View style={styles.liveIndicator}>
+            <View style={styles.liveDot} />
+          </View>
+          <View>
+            <Text style={styles.liveQueueTitle}>
+              {activeClinic ? activeClinic.shortName : 'Sarangpur'} OPD Chamber
+            </Text>
+            <Text style={styles.liveQueueSub}>
+              Now Serving Token: <Text style={styles.liveQueueHighlight}>#{currentQueue?.currentServingToken || 'SAR-015'}</Text>
             </Text>
           </View>
         </View>
-        <View style={styles.queueTrackBtn}>
-          <Text style={styles.queueTrackText}>Track Queue</Text>
-          <Icon name="chevron-right" size={13} color={colors.primary} />
+        <View style={styles.liveQueueAction}>
+          <Text style={styles.liveQueueLink}>Live Queue</Text>
+          <Icon name="chevron-right" size={14} color={colors.primary} />
         </View>
       </TouchableOpacity>
 
-      {/* 4. Chief Specialist Doctor Highlight (Dr. Ankur Deshwali) */}
+      {/* 4. Specialties Filter */}
       <View style={styles.sectionHeader}>
-        <View style={styles.sectionTitleRow}>
-          <Icon name="stethoscope" size={16} color={colors.primary} />
-          <Text style={styles.sectionTitle}>Chief Surgeon & Specialist</Text>
-        </View>
-        <View style={styles.verifiedTag}>
-          <Icon name="shield-check" size={11} color={colors.secondary} />
-          <Text style={styles.verifiedTagText}>Class-I Gazetted</Text>
-        </View>
+        <Text style={styles.sectionTitle}>Specialist Doctors</Text>
+        <Text style={styles.sectionSubtitle}>
+          {filteredDoctors.length} specialist{filteredDoctors.length > 1 ? 's' : ''} available
+        </Text>
       </View>
 
-      <CompactCard style={styles.doctorHighlightCard}>
-        <View style={styles.docHighlightTop}>
-          <DoctorAvatar gender="male" size={62} isHeadSurgeon={true} />
-          <View style={styles.docHighlightInfo}>
-            <View style={styles.docNameBadgeRow}>
-              <Text style={styles.docHighlightName}>Dr. Ankur Deshwali</Text>
-            </View>
-            <Text style={styles.docHighlightQual}>
-              MBBS • MS (Surgery) • MCh (Pediatric Surgery)
-            </Text>
-            <Text style={styles.docHighlightSpec}>
-              Chief Neonatal & Pediatric Laparoscopic Surgeon
-            </Text>
-            <View style={styles.docMetaRow}>
-              <View style={styles.ratingBadge}>
-                <Icon name="star" size={11} color="#D97706" />
-                <Text style={styles.ratingText}>4.98 (680+)</Text>
-              </View>
-              <Text style={styles.dotDivider}>•</Text>
-              <Text style={styles.docExpText}>14+ Yrs Exp</Text>
-              <Text style={styles.dotDivider}>•</Text>
-              <Text style={styles.docRegText}>MP-52140</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.docSchedulePill}>
-          <Icon name="clock" size={12} color={colors.primary} />
-          <Text style={styles.scheduleText}>
-            Daily OPD: 09:00 AM - 02:00 PM (Chamber 101)
-          </Text>
-        </View>
-
-        <View style={styles.docActionRow}>
-          <Button
-            title="Book Visit (₹400)"
-            onPress={() =>
-              openBookingModal({
-                consultationMode: 'IN_CLINIC',
-                doctorId: 'doc-ankur',
-              })
-            }
-            variant="primary"
-            size="sm"
-            icon="token"
-            style={{ flex: 1 }}
-          />
-          <Button
-            title="Video Call (₹500)"
-            onPress={() =>
-              openBookingModal({
-                consultationMode: 'ONLINE_VIDEO',
-                doctorId: 'doc-ankur',
-              })
-            }
-            variant="secondary"
-            size="sm"
-            icon="video"
-            style={{ flex: 1 }}
-          />
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => setProfileModalDoctor(leadDoctor)}
-            style={styles.infoIconBtn}
-          >
-            <Icon name="info" size={16} color={colors.primary} />
-          </TouchableOpacity>
-        </View>
-      </CompactCard>
-
-      {/* 5. Specialist Doctors List */}
-      <View style={styles.sectionHeader}>
-        <View style={styles.sectionTitleRow}>
-          <Icon name="user" size={16} color={colors.primary} />
-          <Text style={styles.sectionTitle}>Consult Specialist Doctors</Text>
-        </View>
-        <Text style={styles.sectionSub}>All 4 Hospital Centers</Text>
-      </View>
-
-      {/* Specialty Filter Chips with Vector Icons */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -303,7 +284,7 @@ export const HomeScreen: React.FC = () => {
             >
               <Icon
                 name={iconName}
-                size={13}
+                size={14}
                 color={isSelected ? colors.white : colors.textSecondary}
               />
               <Text
@@ -319,40 +300,49 @@ export const HomeScreen: React.FC = () => {
         })}
       </ScrollView>
 
+      {/* 5. Doctor List Cards */}
       {filteredDoctors.map((doc) => {
         const isFemale = doc.id === 'doc-anjali';
         return (
-          <CompactCard key={doc.id} style={styles.docCard}>
-            <View style={styles.docCardRow}>
+          <CompactCard key={doc.id} style={styles.doctorCard}>
+            <View style={styles.doctorCardRow}>
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => setProfileModalDoctor(doc)}
               >
                 <DoctorAvatar
                   gender={isFemale ? 'female' : 'male'}
-                  size={50}
+                  size={54}
                   isHeadSurgeon={!!doc.isHeadSurgeon}
                 />
               </TouchableOpacity>
-              <View style={styles.docCardInfo}>
-                <Text style={styles.docCardName}>{doc.name}</Text>
-                <Text style={styles.docCardQual}>{doc.qualification}</Text>
-                <Text style={styles.docCardSpec}>{doc.specialization}</Text>
-                <View style={styles.docCardBottomRow}>
-                  <Text style={styles.docCardFee}>
-                    OPD: ₹{doc.consultationFeeClinic}
-                  </Text>
-                  <Text style={styles.dotDivider}>•</Text>
-                  <View style={styles.ratingBadgeSmall}>
-                    <Icon name="star" size={10} color="#D97706" />
-                    <Text style={styles.ratingTextSmall}>{doc.rating}</Text>
+              <View style={styles.doctorCardInfo}>
+                <View style={styles.doctorNameRow}>
+                  <Text style={styles.doctorName}>{doc.name}</Text>
+                  {doc.isHeadSurgeon && (
+                    <View style={styles.chiefBadge}>
+                      <Text style={styles.chiefBadgeText}>Chief</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.doctorSpecialty}>{doc.specialization}</Text>
+                <Text style={styles.doctorQual}>{doc.qualification}</Text>
+                <View style={styles.doctorMetaRow}>
+                  <View style={styles.ratingBadge}>
+                    <Icon name="star" size={11} color="#D97706" />
+                    <Text style={styles.ratingText}>{doc.rating}</Text>
                   </View>
-                  <Text style={styles.dotDivider}>•</Text>
-                  <Text style={styles.docCardReg}>Reg: {doc.regNumber.split('/')[0]}</Text>
+                  <Text style={styles.metaDot}>•</Text>
+                  <Text style={styles.doctorExp}>{doc.experienceYears}+ Yrs Exp</Text>
+                  <Text style={styles.metaDot}>•</Text>
+                  <Text style={styles.doctorFee}>₹{doc.consultationFeeClinic} OPD</Text>
                 </View>
               </View>
+            </View>
+
+            <View style={styles.doctorActionRow}>
               <Button
-                title="Book"
+                title="Book Visit"
                 onPress={() =>
                   openBookingModal({
                     doctorId: doc.id,
@@ -362,53 +352,69 @@ export const HomeScreen: React.FC = () => {
                 variant="primary"
                 size="sm"
                 icon="token"
-                style={styles.bookBtnSmall}
+                style={{ flex: 1 }}
               />
+              <Button
+                title="Video Call"
+                onPress={() =>
+                  openBookingModal({
+                    doctorId: doc.id,
+                    consultationMode: 'ONLINE_VIDEO',
+                  })
+                }
+                variant="secondary"
+                size="sm"
+                icon="video"
+                style={{ flex: 1 }}
+              />
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setProfileModalDoctor(doc)}
+                style={styles.doctorInfoBtn}
+              >
+                <Icon name="info" size={16} color={colors.primary} />
+              </TouchableOpacity>
             </View>
           </CompactCard>
         );
       })}
 
-      {/* 6. Hospital Centers Summary Card */}
+      {/* 6. Hospital Branches Shortcut */}
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={() => setActiveTab('clinics')}
-        style={styles.branchSummaryCard}
+        style={styles.branchesSummaryCard}
       >
-        <View style={styles.branchSummaryLeft}>
-          <View style={styles.branchIconBadge}>
+        <View style={styles.branchesSummaryLeft}>
+          <View style={styles.branchIconWrap}>
             <Icon name="hospital" size={18} color={colors.primary} />
           </View>
           <View>
-            <Text style={styles.branchSummaryTitle}>SEVASADAN 4 Hospital Centers</Text>
-            <Text style={styles.branchSummarySub}>
+            <Text style={styles.branchesTitle}>4 Hospital Centers</Text>
+            <Text style={styles.branchesSubtitle}>
               Sarangpur • Shujalpur • Rajgarh • Biaora
             </Text>
           </View>
         </View>
-        <View style={styles.branchSummaryAction}>
-          <Text style={styles.branchSummaryLink}>View Centers</Text>
-          <Icon name="chevron-right" size={13} color={colors.primary} />
-        </View>
+        <Icon name="chevron-right" size={15} color={colors.textMuted} />
       </TouchableOpacity>
 
-      {/* 7. Emergency 24x7 Help Banner */}
+      {/* 7. Emergency Helpline Banner */}
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={handleEmergencyCall}
         style={styles.emergencyCard}
       >
-        <View style={styles.emergencyIconCircle}>
-          <Icon name="phone" size={16} color={colors.white} />
+        <View style={styles.emergencyIconWrap}>
+          <Icon name="phone" size={18} color={colors.white} />
         </View>
         <View style={styles.emergencyTextWrap}>
-          <Text style={styles.emergencyTitle}>24x7 Emergency Trauma & Ambulance</Text>
+          <Text style={styles.emergencyTitle}>24x7 Emergency & Trauma Care</Text>
           <Text style={styles.emergencySub}>Toll Free: 1800-7382-723 (Tap to Call)</Text>
         </View>
-        <Icon name="chevron-right" size={14} color="rgba(255,255,255,0.7)" />
       </TouchableOpacity>
 
-      {/* Doctor Profile Modal for Detailed Credentials */}
+      {/* Doctor Credentials Details Modal */}
       {profileModalDoctor && (
         <Modal
           visible={!!profileModalDoctor}
@@ -421,13 +427,13 @@ export const HomeScreen: React.FC = () => {
               <View style={styles.modalHeader}>
                 <View style={styles.modalHeaderLeft}>
                   <Icon name="stethoscope" size={18} color={colors.primary} />
-                  <Text style={styles.modalTitle}>Doctor Credentials</Text>
+                  <Text style={styles.modalTitle}>Doctor Details</Text>
                 </View>
                 <TouchableOpacity
                   onPress={() => setProfileModalDoctor(null)}
                   style={styles.modalCloseBtn}
                 >
-                  <Icon name="close" size={16} color={colors.textSecondary} />
+                  <Icon name="close" size={18} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
 
@@ -435,7 +441,7 @@ export const HomeScreen: React.FC = () => {
                 <View style={styles.modalDocTop}>
                   <DoctorAvatar
                     gender={profileModalDoctor.id === 'doc-anjali' ? 'female' : 'male'}
-                    size={64}
+                    size={60}
                     isHeadSurgeon={!!profileModalDoctor.isHeadSurgeon}
                   />
                   <View style={{ flex: 1, marginLeft: 12 }}>
@@ -447,18 +453,18 @@ export const HomeScreen: React.FC = () => {
                       {profileModalDoctor.qualification}
                     </Text>
                     <Text style={styles.modalDocReg}>
-                      MCI / State Reg: {profileModalDoctor.regNumber}
+                      Registration: {profileModalDoctor.regNumber}
                     </Text>
                   </View>
                 </View>
 
                 <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionHeading}>Clinical Profile</Text>
+                  <Text style={styles.modalSectionHeading}>About Doctor</Text>
                   <Text style={styles.modalSectionBody}>{profileModalDoctor.bio}</Text>
                 </View>
 
                 <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionHeading}>OPD Schedule & Chambers</Text>
+                  <Text style={styles.modalSectionHeading}>OPD Chamber Schedule</Text>
                   <View style={styles.scheduleRow}>
                     <Icon name="clock" size={14} color={colors.primary} />
                     <Text style={styles.scheduleDetailText}>
@@ -471,13 +477,13 @@ export const HomeScreen: React.FC = () => {
                   <Text style={styles.modalSectionHeading}>Consultation Fees</Text>
                   <View style={styles.feeGrid}>
                     <View style={styles.feeItem}>
-                      <Text style={styles.feeItemLabel}>In-Clinic OPD Token</Text>
+                      <Text style={styles.feeItemLabel}>In-Clinic OPD Visit</Text>
                       <Text style={styles.feeItemValue}>
                         ₹{profileModalDoctor.consultationFeeClinic}
                       </Text>
                     </View>
                     <View style={styles.feeItem}>
-                      <Text style={styles.feeItemLabel}>Tele-Video Consultation</Text>
+                      <Text style={styles.feeItemLabel}>Video Consultation</Text>
                       <Text style={styles.feeItemValue}>
                         ₹{profileModalDoctor.consultationFeeOnline}
                       </Text>
@@ -488,7 +494,7 @@ export const HomeScreen: React.FC = () => {
 
               <View style={styles.modalFooter}>
                 <Button
-                  title="Book Hospital Visit"
+                  title="Book Visit"
                   onPress={() => {
                     const docId = profileModalDoctor.id;
                     setProfileModalDoctor(null);
@@ -522,6 +528,122 @@ export const HomeScreen: React.FC = () => {
           </View>
         </Modal>
       )}
+
+      {/* 8. Digital OPD Token Pass Modal */}
+      {viewPassApt && (
+        <Modal
+          visible={!!viewPassApt}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setViewPassApt(null)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalHeader}>
+                <View style={styles.modalHeaderLeft}>
+                  <Icon name="receipt" size={18} color={colors.primary} />
+                  <Text style={styles.modalTitle}>OPD Token Pass</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setViewPassApt(null)}
+                  style={styles.modalCloseBtn}
+                >
+                  <Icon name="close" size={18} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                {/* Hospital Header in Pass */}
+                <View style={styles.passHospitalBox}>
+                  <Text style={styles.passHospitalTitle}>SEVASADAN HOSPITAL NETWORK</Text>
+                  <Text style={styles.passHospitalSub}>
+                    {viewPassApt.clinicName} • Official OPD Pass
+                  </Text>
+                </View>
+
+                {/* Big Token Number Display */}
+                <View style={styles.passTokenDisplayBox}>
+                  <Text style={styles.passTokenLabel}>ASSIGNED TOKEN NUMBER</Text>
+                  <Text style={styles.passTokenBigText}>{viewPassApt.tokenNumber}</Text>
+                  <Badge
+                    label={viewPassApt.consultationMode === 'ONLINE_VIDEO' ? 'Online Video Call' : 'In-Clinic OPD Token'}
+                    variant={viewPassApt.consultationMode === 'ONLINE_VIDEO' ? 'accent' : 'primary'}
+                    size="sm"
+                  />
+                </View>
+
+                {/* Pass Details Table */}
+                <View style={styles.passTable}>
+                  <View style={styles.passTableRow}>
+                    <Text style={styles.passTableKey}>Patient Name</Text>
+                    <Text style={styles.passTableVal}>{viewPassApt.patientName}</Text>
+                  </View>
+                  <View style={styles.passTableRow}>
+                    <Text style={styles.passTableKey}>Consulting Doctor</Text>
+                    <Text style={styles.passTableVal}>{viewPassApt.doctorName}</Text>
+                  </View>
+                  <View style={styles.passTableRow}>
+                    <Text style={styles.passTableKey}>Date & Slot</Text>
+                    <Text style={styles.passTableVal}>{viewPassApt.date} at {viewPassApt.timeSlot}</Text>
+                  </View>
+                  <View style={styles.passTableRow}>
+                    <Text style={styles.passTableKey}>Payment Status</Text>
+                    <Text style={[styles.passTableVal, { color: '#16A34A', fontWeight: 'bold' }]}>
+                      PAID (₹{viewPassApt.feePaid})
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Reporting Instructions */}
+                <View style={styles.passInstructionBox}>
+                  <Icon name="info" size={15} color={colors.primary} />
+                  <Text style={styles.passInstructionText}>
+                    {viewPassApt.consultationMode === 'ONLINE_VIDEO'
+                      ? 'Please ensure good internet connection and click "Join Video Call" when notified.'
+                      : 'Please arrive at the hospital reception 15 minutes before your estimated time.'}
+                  </Text>
+                </View>
+              </ScrollView>
+
+              <View style={styles.modalFooter}>
+                <Button
+                  title="Share Pass"
+                  onPress={() => {
+                    Alert.alert('Pass Shared', 'OPD Token Pass details shared to SMS/WhatsApp.');
+                  }}
+                  variant="outline"
+                  size="md"
+                  icon="share"
+                  style={{ flex: 1 }}
+                />
+                {viewPassApt.consultationMode === 'ONLINE_VIDEO' ? (
+                  <Button
+                    title="Join Video Call"
+                    onPress={() => {
+                      const apt = viewPassApt;
+                      setViewPassApt(null);
+                      openVideoCall(apt);
+                    }}
+                    variant="accent"
+                    size="md"
+                    icon="video"
+                    style={{ flex: 1.2 }}
+                  />
+                ) : (
+                  <Button
+                    title="Done"
+                    onPress={() => setViewPassApt(null)}
+                    variant="primary"
+                    size="md"
+                    icon="check"
+                    style={{ flex: 1 }}
+                  />
+                )}
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </ScrollView>
   );
 };
@@ -529,272 +651,394 @@ export const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F9FC',
+    backgroundColor: colors.background,
   },
   contentContainer: {
     paddingHorizontal: spacing.screenPaddingHorizontal,
-    paddingTop: 8,
+    paddingTop: 12,
     paddingBottom: 28,
   },
-  trustBanner: {
+  heroBanner: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: spacing.borderRadiusMd,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+  },
+  heroTextWrap: {
+    gap: 2,
+  },
+  heroTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.white,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginBottom: 10,
   },
-  trustItem: {
+  onlineBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-  },
-  trustText: {
-    fontSize: 10,
-    fontWeight: typography.weights.semiBold,
-    color: colors.textSecondary,
-  },
-  trustDivider: {
-    width: 1,
-    height: 12,
-    backgroundColor: '#E2E8F0',
-  },
-  heroActionGrid: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 10,
-  },
-  bigActionCard: {
-    flex: 1,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 12,
-    justifyContent: 'space-between',
-    backgroundColor: colors.white,
-    shadowColor: '#0F4C81',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  inClinicCard: {
-    borderColor: '#BAE6FD',
-    backgroundColor: '#F0F9FF',
-  },
-  teleCard: {
-    borderColor: '#A7F3D0',
-    backgroundColor: '#F0FDF4',
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  actionIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modeBadge: {
-    backgroundColor: '#E0F2FE',
-    paddingVertical: 2,
+    backgroundColor: '#DCFCE7',
     paddingHorizontal: 7,
-    borderRadius: 6,
+    paddingVertical: 2,
+    borderRadius: 999,
   },
-  modeBadgeText: {
-    fontSize: 9,
+  onlineBadgeText: {
+    fontSize: 9.5,
     fontWeight: typography.weights.bold,
-    color: colors.primary,
+    color: '#15803D',
   },
-  cardBodyWrap: {
-    marginVertical: 4,
-  },
-  actionCardTitle: {
+  heroGreeting: {
     fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
-    color: colors.text,
-  },
-  actionCardDesc: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginTop: 2,
-    lineHeight: 15,
-  },
-  actionPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#E0F2FE',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    marginTop: 8,
-  },
-  actionPillText: {
-    fontSize: 11,
-    fontWeight: typography.weights.bold,
     color: colors.primary,
   },
-  queueBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  heroSubtitle: {
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  activeTokenCard: {
     backgroundColor: colors.white,
-    borderRadius: 10,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderRadius: spacing.borderRadiusMd,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    padding: 12,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  queueBannerLeft: {
+  activeTokenHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surfaceSecondary,
+  },
+  activeTokenHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-    gap: 8,
+    gap: 6,
   },
-  pulseContainer: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+  pulsingDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: '#DCFCE7',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  pulseDot: {
+  pulsingDotInner: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#16A34A',
+  },
+  activeTokenHeaderTitle: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.bold,
+    color: colors.primary,
+  },
+  activeTokenBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+  },
+  tokenNumberBox: {
+    backgroundColor: colors.primaryLight,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  tokenNumberLabel: {
+    fontSize: 8.5,
+    fontWeight: typography.weights.bold,
+    color: colors.primary,
+    letterSpacing: 0.5,
+  },
+  tokenNumberValue: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.extraBold,
+    color: colors.primary,
+    marginTop: 1,
+  },
+  activeTokenDetails: {
+    flex: 1,
+  },
+  activeTokenDoctor: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.bold,
+    color: colors.text,
+  },
+  activeTokenClinic: {
+    fontSize: typography.sizes.xxs,
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+  queueStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  queueStatusText: {
+    fontSize: typography.sizes.xxs,
+    color: colors.textSecondary,
+  },
+  activeTokenActions: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceSecondary,
+  },
+  passActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: colors.surfaceSecondary,
+    paddingVertical: 7,
+    borderRadius: 6,
+  },
+  passActionBtnPrimary: {
+    backgroundColor: colors.accent,
+  },
+  passActionBtnSecondary: {
+    backgroundColor: colors.secondaryLight,
+  },
+  passActionBtnText: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.semiBold,
+    color: colors.primary,
+  },
+  actionGrid: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+  },
+  actionCard: {
+    flex: 1,
+    backgroundColor: colors.white,
+    borderRadius: spacing.borderRadiusMd,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    justifyContent: 'space-between',
+    minHeight: 125,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  inClinicCard: {
+    borderColor: '#BFDBFE',
+  },
+  videoCard: {
+    borderColor: '#99F6E4',
+  },
+  actionIconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  actionCardContent: {
+    marginBottom: 8,
+  },
+  actionTitle: {
+    fontSize: typography.sizes.sm + 0.5,
+    fontWeight: typography.weights.bold,
+    color: colors.text,
+  },
+  actionDesc: {
+    fontSize: typography.sizes.xxs,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  actionButtonPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.primaryLight,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+  },
+  actionButtonText: {
+    fontSize: typography.sizes.xxs,
+    fontWeight: typography.weights.bold,
+    color: colors.primary,
+  },
+  liveQueueCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.white,
+    borderRadius: spacing.borderRadiusMd,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: 14,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 1,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  liveQueueLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  liveIndicator: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#DCFCE7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  liveDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: colors.secondary,
   },
-  queueHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  queueBranchName: {
-    fontSize: 11,
+  liveQueueTitle: {
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semiBold,
     color: colors.textSecondary,
   },
-  liveTag: {
-    backgroundColor: '#DCFCE7',
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 3,
-  },
-  liveTagText: {
-    fontSize: 8,
-    fontWeight: typography.weights.bold,
-    color: '#065F46',
-  },
-  queueBannerNumber: {
-    fontSize: typography.sizes.sm,
+  liveQueueSub: {
+    fontSize: typography.sizes.xs,
     color: colors.text,
-    fontWeight: typography.weights.medium,
     marginTop: 1,
   },
-  tokenHighlight: {
-    color: colors.primary,
+  liveQueueHighlight: {
     fontWeight: typography.weights.extraBold,
+    color: colors.primary,
   },
-  queueTrackBtn: {
+  liveQueueAction: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-    backgroundColor: '#F1F5F9',
-    paddingVertical: 5,
+    gap: 3,
+    backgroundColor: colors.surfaceSecondary,
+    paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: 6,
   },
-  queueTrackText: {
-    fontSize: 11,
-    fontWeight: typography.weights.bold,
+  liveQueueLink: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.semiBold,
     color: colors.primary,
   },
   sectionHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
-    marginTop: 4,
-  },
-  sectionTitleRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    marginBottom: 8,
   },
   sectionTitle: {
     fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
-  sectionSub: {
-    fontSize: 11,
+  sectionSubtitle: {
+    fontSize: typography.sizes.xs,
     color: colors.textMuted,
   },
-  verifiedTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  verifiedTagText: {
-    fontSize: 9,
-    fontWeight: typography.weights.bold,
-    color: '#065F46',
-  },
-  doctorHighlightCard: {
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    padding: 12,
+  specialtiesScroll: {
+    gap: 8,
     marginBottom: 12,
   },
-  docHighlightTop: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  docHighlightInfo: {
-    flex: 1,
-  },
-  docNameBadgeRow: {
+  specialtyChip: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.white,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  docHighlightName: {
+  specialtyChipSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  specialtyName: {
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
+    fontWeight: typography.weights.medium,
+  },
+  specialtyNameSelected: {
+    color: colors.white,
+    fontWeight: typography.weights.bold,
+  },
+  doctorCard: {
+    backgroundColor: colors.white,
+    borderRadius: spacing.borderRadiusMd,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  doctorCardRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  doctorCardInfo: {
+    flex: 1,
+  },
+  doctorNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  doctorName: {
     fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
-  docHighlightQual: {
-    fontSize: 11,
+  chiefBadge: {
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 4,
+  },
+  chiefBadgeText: {
+    fontSize: typography.sizes.xxs - 1,
+    fontWeight: typography.weights.bold,
     color: colors.primary,
-    fontWeight: typography.weights.medium,
+  },
+  doctorSpecialty: {
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
     marginTop: 1,
   },
-  docHighlightSpec: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginTop: 2,
+  doctorQual: {
+    fontSize: typography.sizes.xxs,
+    color: colors.textMuted,
+    marginTop: 1,
   },
-  docMetaRow: {
+  doctorMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4,
@@ -804,7 +1048,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: colors.warningLight,
     paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: 4,
@@ -814,196 +1058,85 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.bold,
     color: '#92400E',
   },
-  dotDivider: {
+  metaDot: {
     fontSize: 10,
     color: colors.textLight,
   },
-  docExpText: {
-    fontSize: 10,
-    color: colors.textSecondary,
-    fontWeight: typography.weights.medium,
-  },
-  docRegText: {
-    fontSize: 10,
+  doctorExp: {
+    fontSize: typography.sizes.xxs,
     color: colors.textMuted,
   },
-  docSchedulePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    paddingVertical: 5,
-    paddingHorizontal: 8,
-    borderRadius: 6,
-    marginTop: 10,
-    marginBottom: 10,
+  doctorFee: {
+    fontSize: typography.sizes.xxs,
+    fontWeight: typography.weights.bold,
+    color: colors.secondaryDark,
   },
-  scheduleText: {
-    fontSize: 10.5,
-    color: colors.textSecondary,
-    fontWeight: typography.weights.medium,
-  },
-  docActionRow: {
+  doctorActionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceSecondary,
   },
-  infoIconBtn: {
+  doctorInfoBtn: {
     width: 34,
     height: 34,
-    borderRadius: 8,
-    backgroundColor: '#F1F5F9',
+    borderRadius: 6,
+    backgroundColor: colors.surfaceSecondary,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  specialtiesScroll: {
-    gap: 8,
-    marginBottom: 10,
-  },
-  specialtyChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: colors.white,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  specialtyChipSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  specialtyName: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: typography.weights.medium,
-  },
-  specialtyNameSelected: {
-    color: colors.white,
-    fontWeight: typography.weights.bold,
-  },
-  docCard: {
-    backgroundColor: colors.white,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 10,
-    marginBottom: 8,
-  },
-  docCardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  docCardInfo: {
-    flex: 1,
-  },
-  docCardName: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
-    color: colors.text,
-  },
-  docCardQual: {
-    fontSize: 10,
-    color: colors.primary,
-    fontWeight: typography.weights.medium,
-  },
-  docCardSpec: {
-    fontSize: 10.5,
-    color: colors.textSecondary,
-    marginTop: 1,
-  },
-  docCardBottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 3,
-  },
-  docCardFee: {
-    fontSize: 10.5,
-    fontWeight: typography.weights.bold,
-    color: '#065F46',
-  },
-  ratingBadgeSmall: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  ratingTextSmall: {
-    fontSize: 10,
-    fontWeight: typography.weights.bold,
-    color: '#92400E',
-  },
-  docCardReg: {
-    fontSize: 9.5,
-    color: colors.textLight,
-  },
-  bookBtnSmall: {
-    minWidth: 70,
-  },
-  branchSummaryCard: {
+  branchesSummaryCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.white,
-    borderRadius: 10,
+    borderRadius: spacing.borderRadiusMd,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 10,
-    marginTop: 6,
+    borderColor: colors.border,
+    marginTop: 4,
     marginBottom: 10,
   },
-  branchSummaryLeft: {
+  branchesSummaryLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     flex: 1,
   },
-  branchIconBadge: {
-    width: 34,
-    height: 34,
+  branchIconWrap: {
+    width: 36,
+    height: 36,
     borderRadius: 8,
-    backgroundColor: '#E0F2FE',
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  branchSummaryTitle: {
-    fontSize: 12,
+  branchesTitle: {
+    fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
-  branchSummarySub: {
-    fontSize: 10.5,
+  branchesSubtitle: {
+    fontSize: typography.sizes.xs,
     color: colors.textMuted,
     marginTop: 1,
-  },
-  branchSummaryAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  branchSummaryLink: {
-    fontSize: 11,
-    fontWeight: typography.weights.bold,
-    color: colors.primary,
   },
   emergencyCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#B91C1C',
-    borderRadius: 10,
+    backgroundColor: colors.danger,
+    borderRadius: spacing.borderRadiusMd,
     padding: 12,
-    gap: 10,
+    gap: 12,
   },
-  emergencyIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  emergencyIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1011,18 +1144,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   emergencyTitle: {
-    fontSize: 12,
+    fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
     color: colors.white,
   },
   emergencySub: {
-    fontSize: 10.5,
-    color: '#FEE2E2',
+    fontSize: typography.sizes.xs,
+    color: 'rgba(255, 255, 255, 0.9)',
     marginTop: 1,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     justifyContent: 'flex-end',
   },
   modalContainer: {
@@ -1039,7 +1172,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: colors.border,
   },
   modalHeaderLeft: {
     flexDirection: 'row',
@@ -1061,11 +1194,9 @@ const styles = StyleSheet.create({
   modalDocTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.surfaceSecondary,
     padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderRadius: spacing.borderRadiusMd,
     marginBottom: 14,
   },
   modalDocName: {
@@ -1074,18 +1205,18 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   modalDocSpecialty: {
-    fontSize: 11.5,
+    fontSize: typography.sizes.xs,
     color: colors.textSecondary,
     marginTop: 1,
   },
   modalDocQual: {
-    fontSize: 11,
+    fontSize: typography.sizes.xxs,
     color: colors.primary,
-    fontWeight: typography.weights.semiBold,
+    fontWeight: typography.weights.medium,
     marginTop: 2,
   },
   modalDocReg: {
-    fontSize: 10,
+    fontSize: typography.sizes.xxs,
     color: colors.textMuted,
     marginTop: 2,
   },
@@ -1093,28 +1224,28 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   modalSectionHeading: {
-    fontSize: 12,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.bold,
-    color: colors.text,
+    color: colors.textMuted,
     marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   modalSectionBody: {
-    fontSize: 12,
+    fontSize: typography.sizes.sm,
     color: colors.textSecondary,
-    lineHeight: 18,
+    lineHeight: 20,
   },
   scheduleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#F0F9FF',
-    padding: 8,
-    borderRadius: 6,
+    backgroundColor: colors.primaryLight,
+    padding: 10,
+    borderRadius: 8,
   },
   scheduleDetailText: {
-    fontSize: 11.5,
+    fontSize: typography.sizes.xs,
     color: colors.primary,
     fontWeight: typography.weights.medium,
   },
@@ -1124,18 +1255,16 @@ const styles = StyleSheet.create({
   },
   feeItem: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.surfaceSecondary,
     padding: 10,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
   },
   feeItemLabel: {
-    fontSize: 10.5,
+    fontSize: typography.sizes.xxs,
     color: colors.textMuted,
   },
   feeItemValue: {
-    fontSize: 14,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     color: colors.text,
     marginTop: 2,
@@ -1146,4 +1275,86 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
   },
+  passHospitalBox: {
+    backgroundColor: colors.primaryLight,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  passHospitalTitle: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.bold,
+    color: colors.primary,
+    letterSpacing: 0.5,
+  },
+  passHospitalSub: {
+    fontSize: typography.sizes.xxs,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  passTokenDisplayBox: {
+    backgroundColor: colors.surfaceSecondary,
+    padding: 14,
+    borderRadius: spacing.borderRadiusMd,
+    alignItems: 'center',
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  passTokenLabel: {
+    fontSize: typography.sizes.xxs,
+    fontWeight: typography.weights.bold,
+    color: colors.textMuted,
+    letterSpacing: 1,
+  },
+  passTokenBigText: {
+    fontSize: 32,
+    fontWeight: typography.weights.extraBold,
+    color: colors.primary,
+    marginVertical: 4,
+  },
+  passTable: {
+    backgroundColor: colors.white,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 12,
+    marginBottom: 14,
+  },
+  passTableRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surfaceSecondary,
+  },
+  passTableKey: {
+    fontSize: typography.sizes.xs,
+    color: colors.textMuted,
+  },
+  passTableVal: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.bold,
+    color: colors.text,
+  },
+  passInstructionBox: {
+    flexDirection: 'row',
+    gap: 8,
+    backgroundColor: '#F8FAFC',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+  },
+  passInstructionText: {
+    flex: 1,
+    fontSize: typography.sizes.xxs,
+    color: colors.textSecondary,
+    lineHeight: 15,
+  },
 });
+

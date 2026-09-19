@@ -78,11 +78,11 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.cardPadding,
     marginBottom: spacing.cardMarginVertical + 2,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 6,
+    elevation: 2,
     overflow: 'hidden',
   },
   header: {
@@ -116,3 +116,4 @@ const styles = StyleSheet.create({
     // Clean content container
   },
 });
+

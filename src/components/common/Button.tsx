@@ -13,7 +13,7 @@ import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { Icon, IconName } from './Icon';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'accent' | 'outline' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps {
@@ -50,6 +50,8 @@ export const Button: React.FC<ButtonProps> = ({
     switch (variant) {
       case 'secondary':
         return { bg: colors.secondary, text: colors.white };
+      case 'accent':
+        return { bg: colors.accent, text: colors.white };
       case 'outline':
         return { bg: 'transparent', text: colors.primary, border: colors.primary };
       case 'ghost':
