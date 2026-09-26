@@ -27,6 +27,7 @@ export interface Clinic {
   activeDoctorCount: number;
   rating: number;
   tokenPrefix: string;
+  slotIntervalMinutes?: number;
   coordinates: {
     lat: number;
     lng: number;
@@ -53,6 +54,58 @@ export interface Doctor {
   isHeadSurgeon?: boolean;
   dutyStatus?: DoctorDutyStatus;
   isActive?: boolean;
+}
+
+export interface DeskStaff {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  clinicId: string;
+  clinicName: string;
+  roleTitle: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  joinedDate: string;
+}
+
+export interface CareService {
+  id: string;
+  name: string;
+  category: 'DIAGNOSTICS' | 'PHARMACY' | 'LABORATORY' | 'CLINICAL' | 'SURGERY';
+  price: number;
+  description: string;
+  turnaroundTime?: string;
+  homeCollectionAvailable?: boolean;
+}
+
+export interface RevenueAuditRecord {
+  id: string;
+  patientName: string;
+  doctorName: string;
+  clinicName: string;
+  clinicId: string;
+  method: 'CASH' | 'ONLINE_UPI' | 'NET_BANKING';
+  amount: number;
+  status: 'PAID' | 'PENDING' | 'SETTLED';
+  date: string;
+  tokenNumber?: string;
+}
+
+export interface EMRLogRecord {
+  id: string;
+  tokenNumber: string;
+  patientName: string;
+  patientPhone: string;
+  patientAge?: string;
+  patientGender?: string;
+  doctorName: string;
+  clinicName: string;
+  clinicId: string;
+  mode: 'PHYSICAL' | 'ONLINE_VIDEO';
+  amount: number;
+  status: AppointmentStatus;
+  date: string;
+  timeSlot?: string;
 }
 
 export interface Appointment {
@@ -178,26 +231,26 @@ export const DEMO_CREDENTIALS: Record<UserRole, DemoCredential> = {
   },
   DOCTOR: {
     role: 'DOCTOR',
-    id: 'dr.ankur@sevasadan.com',
-    pass: 'doctor123',
-    name: 'Dr. Ankur Deshwali',
-    subtitle: 'Chief Consultant Surgeon',
+    id: 'alisamad9571@gmail.com',
+    pass: 'Doctor@12345',
+    name: 'Dr. Syed',
+    subtitle: 'Consultant Specialist (OPD Chamber)',
     doctorId: 'doc-ankur',
     clinicId: 'sarangpur',
   },
   FRONT_DESK: {
     role: 'FRONT_DESK',
-    id: 'desk.sarangpur',
+    id: 'ayan.08m@outlook.com',
     pass: 'desk123',
-    name: 'Sarangpur Reception Desk',
-    subtitle: 'OPD Counter Operator',
-    clinicId: 'sarangpur',
+    name: 'Ayan (Desk Staff)',
+    subtitle: 'Rajgarh & Sarangpur Reception Desk',
+    clinicId: 'rajgarh',
   },
   ADMIN: {
     role: 'ADMIN',
-    id: 'admin@sevasadan.com',
-    pass: 'admin123',
+    id: 'jansevaarogyam@gmail.com',
+    pass: 'Ankur@12345',
     name: 'Hospital Director',
-    subtitle: 'Executive Super Admin',
+    subtitle: 'Executive Super Admin Console',
   },
 };

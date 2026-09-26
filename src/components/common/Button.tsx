@@ -13,7 +13,7 @@ import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { Icon, IconName } from './Icon';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'accent' | 'outline' | 'ghost' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'accent' | 'outline' | 'ghost' | 'danger' | 'danger-outline';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps {
@@ -58,6 +58,8 @@ export const Button: React.FC<ButtonProps> = ({
         return { bg: 'transparent', text: colors.primary };
       case 'danger':
         return { bg: colors.danger, text: colors.white };
+      case 'danger-outline':
+        return { bg: '#FEF2F2', text: '#DC2626', border: '#DC2626' };
       case 'primary':
       default:
         return { bg: colors.primary, text: colors.white };

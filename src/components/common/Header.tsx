@@ -25,6 +25,8 @@ export const Header: React.FC = () => {
     activeDoctorId,
     setDoctorDuty,
     logout,
+    openDrawer,
+    activeAdminTab,
   } = useApp();
 
   const currentDoctor = doctors.find((d) => d.id === activeDoctorId) || doctors[0];
@@ -33,7 +35,7 @@ export const Header: React.FC = () => {
     const helpline = '18007382723';
     Alert.alert(
       '24x7 Emergency Medical Helpline',
-      'Dial SEVASADAN 24-hour trauma, neonatal & emergency helpline (Toll Free: 1800-7382-723)?',
+      'Dial JANSEVA AROGYAM 24-hour trauma, neonatal & emergency helpline (Toll Free: 1800-7382-723)?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -51,15 +53,36 @@ export const Header: React.FC = () => {
 
   const getRoleLabel = (): { label: string; icon: IconName; bg: string; text: string } | null => {
     switch (activeRole) {
+      case 'ADMIN':
+        return { label: 'Super Admin', icon: 'shield', bg: '#EDE9FE', text: '#6D28D9' };
+      case 'FRONT_DESK':
+        return { label: 'Front Desk', icon: 'token', bg: '#FEF3C7', text: '#92400E' };
       case 'DOCTOR':
         return { label: 'Dr. Ankur', icon: 'stethoscope', bg: '#D1FAE5', text: '#065F46' };
-      case 'FRONT_DESK':
-        return { label: 'Reception', icon: 'desk', bg: '#FEF3C7', text: '#92400E' };
-      case 'ADMIN':
-        return { label: 'Admin', icon: 'shield-check', bg: '#EDE9FE', text: '#5B21B6' };
       case 'PATIENT':
       default:
         return null;
+    }
+  };
+
+  const getAdminTabName = (): string => {
+    switch (activeAdminTab) {
+      case 'admin_overview':
+        return 'Overview';
+      case 'admin_branches':
+        return 'Branches & OPD';
+      case 'admin_doctors':
+        return 'Doctors Roster';
+      case 'admin_staff':
+        return 'Desk Staff';
+      case 'admin_services':
+        return 'Lab & Care Services';
+      case 'admin_revenue':
+        return 'Revenue Audit';
+      case 'admin_emr':
+        return 'EMR Logs';
+      default:
+        return 'Admin Console';
     }
   };
 
@@ -69,18 +92,34 @@ export const Header: React.FC = () => {
     <View style={styles.container}>
       {/* Top Main Bar */}
       <View style={styles.topRow}>
+        {/* Left: Drawer Hamburger Menu Toggle (ONLY for ADMIN role) */}
+        {activeRole === 'ADMIN' && (
+          <TouchableOpacity
+            activeOpacity={0.75}
+            onPress={openDrawer}
+            style={styles.drawerToggleBtn}
+            accessibilityLabel="Open Admin Navigation Sidebar Drawer"
+            accessibilityRole="button"
+          >
+            <Icon name="menu" size={20} color={colors.white} />
+          </TouchableOpacity>
+        )}
+
+        {/* Brand Information */}
         <View style={styles.brandContainer}>
-          <HospitalLogo size={30} badgeBg="#FFFFFF" color={colors.primary} style={styles.logoBadge} />
-          <View>
-            <Text style={styles.brandTitle}>SEVASADAN</Text>
-            <Text style={styles.brandSubtitle}>
-              {activeRole === 'DOCTOR'
-                ? 'Doctor Consultation'
+          <HospitalLogo size={28} badgeBg="#FFFFFF" color={colors.primary} style={styles.logoBadge} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.brandTitle} numberOfLines={1}>
+              {activeRole === 'ADMIN' ? 'JANSEVA ADMIN' : 'JANSEVA AROGYAM'}
+            </Text>
+            <Text style={styles.brandSubtitle} numberOfLines={1}>
+              {activeRole === 'ADMIN'
+                ? `Console • ${getAdminTabName()}`
                 : activeRole === 'FRONT_DESK'
-                ? 'Front Desk & Reception'
-                : activeRole === 'ADMIN'
-                ? 'Hospital Administration'
-                : 'Hospital & Tele-OPD'}
+                ? 'Reception & OPD Token Desk'
+                : activeRole === 'DOCTOR'
+                ? 'Doctor Consultation Chamber'
+                : 'Specialist OPD & Telemedicine'}
             </Text>
           </View>
         </View>
@@ -96,14 +135,16 @@ export const Header: React.FC = () => {
             </View>
           )}
 
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={handleEmergencyCall}
-            style={styles.emergencyBtn}
-          >
-            <Icon name="phone" size={12} color={colors.white} />
-            <Text style={styles.emergencyText}>Emergency</Text>
-          </TouchableOpacity>
+          {activeRole !== 'ADMIN' && (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handleEmergencyCall}
+              style={styles.emergencyBtn}
+            >
+              <Icon name="phone" size={12} color={colors.white} />
+              <Text style={styles.emergencyText}>Emergency</Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
             activeOpacity={0.8}
@@ -115,13 +156,12 @@ export const Header: React.FC = () => {
             }}
             style={styles.logoutBtn}
           >
-            <Icon name="log-out" size={13} color="rgba(255,255,255,0.8)" />
+            <Icon name="log-out" size={13} color="rgba(255,255,255,0.85)" />
           </TouchableOpacity>
         </View>
       </View>
 
-
-
+      {/* Doctor Sub-bar */}
       {activeRole === 'DOCTOR' && (
         <View style={styles.doctorSubBar}>
           <View style={styles.dutyInfo}>
@@ -149,45 +189,14 @@ export const Header: React.FC = () => {
             </TouchableOpacity>
           </View>
           <Text style={styles.docBranchSchedule}>
-            Chamber 101 • Sarangpur
+            Chamber 101 • Sarangpur & Rajgarh
           </Text>
         </View>
       )}
 
-      {activeRole === 'FRONT_DESK' && (
-        <View style={styles.subBar}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-          >
-            <Text style={styles.deskCounterLabel}>Active Center:</Text>
-            {CLINICS.map((clinic) => {
-              const isActive = activeDeskBranchId === clinic.id;
-              return (
-                <TouchableOpacity
-                  key={clinic.id}
-                  onPress={() => setActiveDeskBranchId(clinic.id)}
-                  style={[styles.chip, isActive && styles.chipActive]}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      isActive && styles.chipTextActive,
-                    ]}
-                  >
-                    {clinic.shortName}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
-      )}
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -203,6 +212,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.screenPaddingHorizontal,
     paddingVertical: 6,
+  },
+  drawerToggleBtn: {
+    padding: 7,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    marginRight: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   brandContainer: {
     flexDirection: 'row',
@@ -231,7 +248,7 @@ const styles = StyleSheet.create({
   roleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 3,
+    paddingVertical: 3.5,
     paddingHorizontal: 7,
     borderRadius: 6,
     gap: 4,
@@ -343,4 +360,3 @@ const styles = StyleSheet.create({
     marginRight: 2,
   },
 });
-

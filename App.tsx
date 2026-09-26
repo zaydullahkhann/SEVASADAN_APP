@@ -15,24 +15,27 @@ import { AuthScreen } from './src/screens/auth/AuthScreen';
 // Navigation & Common
 import { Header } from './src/components/common/Header';
 import { BottomTabBar } from './src/components/navigation/BottomTabBar';
+import { DrawerNavigation } from './src/components/navigation/DrawerNavigation';
 
 // Patient Screens
 import { HomeScreen } from './src/screens/HomeScreen';
 import { AppointmentsScreen } from './src/screens/AppointmentsScreen';
 import { PrescriptionsScreen } from './src/screens/PrescriptionsScreen';
+import { CareServicesScreen } from './src/screens/CareServicesScreen';
 import { ClinicsScreen } from './src/screens/ClinicsScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 
 // Role-Specific Screens
 import { DoctorQueueScreen } from './src/screens/doctor/DoctorQueueScreen';
+import { DoctorArticlesScreen } from './src/screens/doctor/DoctorArticlesScreen';
 import { FrontDeskScreen } from './src/screens/desk/FrontDeskScreen';
+import { DoctorChamberScreen } from './src/screens/desk/DoctorChamberScreen';
 import { AdminDashboardScreen } from './src/screens/admin/AdminDashboardScreen';
 
 // Modals
 import { BookingModal } from './src/components/booking/BookingModal';
 import { WalkInModal } from './src/components/desk/WalkInModal';
 import { VideoCallModal } from './src/screens/VideoCallModal';
-import { RoleSwitcherModal } from './src/components/common/RoleSwitcherModal';
 import { WritePrescriptionModal } from './src/screens/doctor/WritePrescriptionModal';
 
 function AppContent() {
@@ -49,50 +52,37 @@ function AppContent() {
   }
 
   const renderActiveScreen = () => {
-    // 1. Doctor Portal View
+    // 1. Hospital Super Admin Portal
+    if (activeRole === 'ADMIN') {
+      return <AdminDashboardScreen />;
+    }
+
+    // 2. Front Desk (Reception & Employee) Portal
+    if (activeRole === 'FRONT_DESK') {
+      switch (activeTab) {
+        case 'clinics':
+          return <DoctorChamberScreen />;
+        case 'profile':
+          return <ProfileScreen />;
+        case 'home':
+        default:
+          return <FrontDeskScreen />;
+      }
+    }
+
+    // 3. Doctor Portal View (OPD Chamber 101)
     if (activeRole === 'DOCTOR') {
       switch (activeTab) {
         case 'home':
           return <DoctorQueueScreen />;
-        case 'prescriptions':
-          return <PrescriptionsScreen />;
-        case 'appointments':
-          return <AppointmentsScreen />;
-        case 'clinics':
-          return <ClinicsScreen />;
-        case 'profile':
-        default:
-          return <ProfileScreen />;
-      }
-    }
-
-    // 2. Front Desk Portal View
-    if (activeRole === 'FRONT_DESK') {
-      switch (activeTab) {
-        case 'home':
-          return <FrontDeskScreen />;
         case 'appointments':
           return <AppointmentsScreen />;
         case 'prescriptions':
           return <PrescriptionsScreen />;
+        case 'articles':
+          return <DoctorArticlesScreen />;
         case 'clinics':
           return <ClinicsScreen />;
-        case 'profile':
-        default:
-          return <ProfileScreen />;
-      }
-    }
-
-    // 3. Hospital Admin Portal View
-    if (activeRole === 'ADMIN') {
-      switch (activeTab) {
-        case 'home':
-        case 'prescriptions':
-          return <AdminDashboardScreen />;
-        case 'clinics':
-          return <ClinicsScreen />;
-        case 'appointments':
-          return <AppointmentsScreen />;
         case 'profile':
         default:
           return <ProfileScreen />;
@@ -105,6 +95,10 @@ function AppContent() {
         return <AppointmentsScreen />;
       case 'prescriptions':
         return <PrescriptionsScreen />;
+      case 'care_services':
+      case 'lab':
+      case 'pharmacy':
+        return <CareServicesScreen />;
       case 'clinics':
         return <ClinicsScreen />;
       case 'profile':
@@ -117,25 +111,25 @@ function AppContent() {
 
   return (
     <View style={[styles.appRoot, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      {/* Dynamic Brand Header with Role Switcher & Emergency Shortcut */}
+      {/* Dynamic Brand Header */}
       <Header />
 
-      {/* Main Tab Screen Content (Role-Aware) */}
+      {/* Main Screen Content */}
       <View style={styles.screenContainer}>{renderActiveScreen()}</View>
 
-      {/* Dynamic Bottom Navigation (Role-Aware) */}
+      {/* Bottom Footer Tab Navigation (Hidden in ADMIN mode, rendered for other roles) */}
       <BottomTabBar />
 
-      {/* Role Switcher Modal (Patient, Doctor, Front Desk, Admin) */}
-      <RoleSwitcherModal />
+      {/* Sliding Sidebar Drawer Navigation */}
+      <DrawerNavigation />
 
       {/* Full 6-Step Booking Modal */}
       <BookingModal />
 
-      {/* Reception Desk Walk-In Allotment Modal (Journey 5) */}
+      {/* Reception Desk Walk-In Allotment Modal */}
       <WalkInModal />
 
-      {/* Live Telemedicine Video Consultation Room (Journey 2) */}
+      {/* Live Telemedicine Video Consultation Room */}
       <VideoCallModal />
 
       {/* Doctor's Digital Prescription Authoring Modal */}

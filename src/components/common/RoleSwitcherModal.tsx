@@ -5,6 +5,7 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  ScrollView,
 } from 'react-native';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
@@ -21,6 +22,7 @@ export const RoleSwitcherModal: React.FC = () => {
     isRoleSwitcherOpen,
     closeRoleSwitcher,
     setActiveTab,
+    setActiveAdminTab,
   } = useApp();
 
   const roles: {
@@ -33,47 +35,52 @@ export const RoleSwitcherModal: React.FC = () => {
     bg: string;
   }[] = [
     {
-      key: 'PATIENT',
-      title: 'Patient Portal',
-      tagline: 'Book OPD tokens, video consults, track live queue & prescriptions',
-      badge: 'Public App',
-      icon: 'user',
-      color: colors.primary,
-      bg: '#E0F2FE',
+      key: 'ADMIN',
+      title: 'Hospital Admin Console',
+      tagline: 'Manage doctors roster, branches & OPD, desk staff, lab catalog, revenue audit & EMR logs',
+      badge: 'Super Admin',
+      icon: 'shield',
+      color: '#6D28D9',
+      bg: '#EDE9FE',
+    },
+    {
+      key: 'FRONT_DESK',
+      title: 'Reception & Desk Staff (Ayan)',
+      tagline: 'OPD token chime calling, patient arrival verification, walk-in ticketing & cash register',
+      badge: 'Receptionist',
+      icon: 'token',
+      color: '#B45309',
+      bg: '#FEF3C7',
     },
     {
       key: 'DOCTOR',
       title: 'Doctor Portal (Dr. Ankur Deshwali)',
-      tagline: 'Live OPD queue, call next patient, write digital prescriptions & video OPD',
+      tagline: 'Live OPD queue caller, digital prescription pad & telemedicine video chamber',
       badge: 'Chief Surgeon',
       icon: 'stethoscope',
       color: colors.secondaryDark,
       bg: '#D1FAE5',
     },
     {
-      key: 'FRONT_DESK',
-      title: 'Front Desk / Reception Desk',
-      tagline: 'Issue walk-in tokens, advance queue counter, check-in & cash desk',
-      badge: 'Counter Staff',
-      icon: 'desk',
-      color: '#B45309',
-      bg: '#FEF3C7',
-    },
-    {
-      key: 'ADMIN',
-      title: 'Hospital Director & Admin',
-      tagline: 'Manage doctors, edit consultation fees, 4-branch revenue metrics',
-      badge: 'Executive',
-      icon: 'shield-check',
-      color: '#6D28D9',
-      bg: '#EDE9FE',
+      key: 'PATIENT',
+      title: 'Patient Portal (Aarav Sharma)',
+      tagline: 'Book OPD chamber passes, video consults, lab test booking & view digital prescriptions',
+      badge: 'Public App',
+      icon: 'user',
+      color: colors.primary,
+      bg: '#E0F2FE',
     },
   ];
 
   const handleSelectRole = (role: UserRole) => {
     setActiveRole(role);
     closeRoleSwitcher();
-    setActiveTab('home');
+    if (role === 'ADMIN') {
+      setActiveAdminTab('admin_overview');
+      setActiveTab('admin_overview');
+    } else {
+      setActiveTab('home');
+    }
   };
 
   return (
@@ -88,9 +95,9 @@ export const RoleSwitcherModal: React.FC = () => {
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={styles.headerTitle}>Select Active User Role</Text>
+              <Text style={styles.headerTitle}>Select Active Portal Mode</Text>
               <Text style={styles.headerSub}>
-                Test and experience all 4 roles in SEVASADAN Network
+                Instant access to Admin, Front Desk, Doctor & Patient portals
               </Text>
             </View>
             <TouchableOpacity onPress={closeRoleSwitcher} style={styles.closeBtn}>
@@ -98,8 +105,12 @@ export const RoleSwitcherModal: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Role Cards */}
-          <View style={styles.body}>
+          {/* Role Cards List */}
+          <ScrollView
+            style={styles.scrollBody}
+            contentContainerStyle={styles.body}
+            showsVerticalScrollIndicator={false}
+          >
             {roles.map((r) => {
               const isActive = activeRole === r.key;
               return (
@@ -118,7 +129,10 @@ export const RoleSwitcherModal: React.FC = () => {
 
                   <View style={styles.roleInfo}>
                     <View style={styles.roleTopRow}>
-                      <Text style={[styles.roleTitle, isActive && { color: r.color }]}>
+                      <Text
+                        style={[styles.roleTitle, isActive && { color: r.color }]}
+                        numberOfLines={1}
+                      >
                         {r.title}
                       </Text>
                       <Badge
@@ -132,7 +146,7 @@ export const RoleSwitcherModal: React.FC = () => {
                 </TouchableOpacity>
               );
             })}
-          </View>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -150,6 +164,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: spacing.borderRadiusMd,
     overflow: 'hidden',
+    maxHeight: '85%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
@@ -157,7 +172,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   header: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#072A4A',
     paddingHorizontal: 14,
     paddingVertical: 12,
     flexDirection: 'row',
@@ -171,11 +186,14 @@ const styles = StyleSheet.create({
   },
   headerSub: {
     fontSize: 10.5,
-    color: colors.primaryLight,
+    color: '#93C5FD',
     marginTop: 1,
   },
   closeBtn: {
     padding: 4,
+  },
+  scrollBody: {
+    maxHeight: 460,
   },
   body: {
     padding: 12,

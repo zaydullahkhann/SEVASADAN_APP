@@ -4,6 +4,7 @@ import {
   Text,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
   Linking,
   Alert,
 } from 'react-native';
@@ -19,7 +20,7 @@ import { CompactCard } from '../components/common/CompactCard';
 import { Button } from '../components/common/Button';
 
 export const ClinicsScreen: React.FC = () => {
-  const { activeRole, queueStatuses, openBookingModal } = useApp();
+  const { activeRole, queueStatuses, openBookingModal, setActiveTab } = useApp();
 
   const handleCall = (phone: string, branchName: string) => {
     Alert.alert(`Call ${branchName}`, `Dial ${phone}?`, [
@@ -48,6 +49,17 @@ export const ClinicsScreen: React.FC = () => {
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
+      {activeRole === 'PATIENT' && (
+        <TouchableOpacity
+          style={styles.backBtnRow}
+          onPress={() => setActiveTab('home')}
+          activeOpacity={0.75}
+        >
+          <Icon name="arrow-left" size={14} color={colors.primary} />
+          <Text style={styles.backBtnText}>Back to Home</Text>
+        </TouchableOpacity>
+      )}
+
       <View style={styles.headerBar}>
         <View>
           <Text style={styles.headerTitle}>Hospital Clinic Network</Text>
@@ -98,24 +110,24 @@ export const ClinicsScreen: React.FC = () => {
               </View>
             </View>
 
-            {/* Live Queue Box */}
+            {/* Branch OPD Info Box */}
             <View style={styles.queueBox}>
               <View style={styles.queueItem}>
-                <Text style={styles.queueLabel}>NOW SERVING</Text>
-                <Text style={styles.queueValue}>
-                  {queue?.currentServingToken || `${clinic.tokenPrefix}-001`}
+                <Text style={styles.queueLabel}>OPD CHAMBER</Text>
+                <Text style={[styles.queueValue, { color: '#16A34A', fontSize: 13 }]}>
+                  OPEN TODAY
                 </Text>
               </View>
               <View style={styles.queueSep} />
               <View style={styles.queueItem}>
-                <Text style={styles.queueLabel}>ISSUED TODAY</Text>
+                <Text style={styles.queueLabel}>DAILY SLOTS</Text>
                 <Text style={styles.queueValueSub}>
-                  {queue?.totalIssuedToday || 12} Tokens
+                  {queue?.totalIssuedToday ? `${queue.totalIssuedToday}+ Bookings` : 'Available'}
                 </Text>
               </View>
               <View style={styles.queueSep} />
               <View style={styles.queueItem}>
-                <Text style={styles.queueLabel}>AVG WAIT</Text>
+                <Text style={styles.queueLabel}>AVG CONSULT</Text>
                 <Text style={styles.queueValueSub}>
                   ~{queue?.estimatedWaitMinutesPerPatient || 8} min
                 </Text>
@@ -330,5 +342,17 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: colors.surfaceSecondary,
+  },
+  backBtnRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+    paddingVertical: 4,
+  },
+  backBtnText: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.bold,
+    color: colors.primary,
   },
 });

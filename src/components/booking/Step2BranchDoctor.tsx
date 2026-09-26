@@ -151,23 +151,7 @@ export const Step2BranchDoctor: React.FC<Step2Props> = ({
                       )}
                     </View>
 
-                    <Text style={styles.docSpecialty} numberOfLines={1}>
-                      {doc.specialization}
-                    </Text>
-
-                    <Text style={styles.docQual} numberOfLines={1}>
-                      {doc.qualification}
-                    </Text>
-
                     <View style={styles.metaRow}>
-                      <View style={styles.ratingBadge}>
-                        <Icon name="star" size={10} color={colors.warning} />
-                        <Text style={styles.ratingText}>{doc.rating}</Text>
-                        <Text style={styles.reviewsText}>
-                          ({doc.totalReviews}+)
-                        </Text>
-                      </View>
-                      <Text style={styles.metaSeparator}>•</Text>
                       <Text style={styles.expText}>
                         {doc.experienceYears}+ yrs exp
                       </Text>

@@ -78,6 +78,27 @@ export const HomeScreen: React.FC = () => {
     });
   };
 
+  const handleCallClinic = (phone: string, branchName: string) => {
+    Alert.alert(`Call ${branchName}`, `Dial ${phone}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Call Now',
+        onPress: () =>
+          Linking.openURL(`tel:${phone.replace(/\s+/g, '')}`).catch(() => {}),
+      },
+    ]);
+  };
+
+  const handleDirectionsClinic = (clinic: (typeof CLINICS)[0]) => {
+    const query = `${clinic.name}, ${clinic.city}, Madhya Pradesh`;
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      query
+    )}`;
+    Linking.openURL(url).catch(() => {
+      Alert.alert('Directions', clinic.address);
+    });
+  };
+
   const getSpecialtyIcon = (specId: string): IconName => {
     switch (specId) {
       case 'pediatric':
@@ -148,10 +169,9 @@ export const HomeScreen: React.FC = () => {
                 {activeUserAppointment.clinicName} • {activeUserAppointment.date} ({activeUserAppointment.timeSlot})
               </Text>
               <View style={styles.queueStatusRow}>
-                <Icon name="clock" size={12} color={colors.primary} />
+                <Icon name="check-circle" size={12} color="#16A34A" />
                 <Text style={styles.queueStatusText}>
-                  Now Serving: <Text style={{ fontWeight: 'bold' }}>#{currentQueue?.currentServingToken || 'SAR-015'}</Text>
-                  {patientsAhead > 0 ? ` • ${patientsAhead} ahead (~${patientsAhead * 8} min)` : ' • Your Turn Next!'}
+                  Confirmed Booking • Patient: {activeUserAppointment.patientName}
                 </Text>
               </View>
             </View>
@@ -183,7 +203,7 @@ export const HomeScreen: React.FC = () => {
                 activeOpacity={0.8}
               >
                 <Icon name="token" size={14} color={colors.secondaryDark} />
-                <Text style={[styles.passActionBtnText, { color: colors.secondaryDark }]}>Live Queue Tracker</Text>
+                <Text style={[styles.passActionBtnText, { color: colors.secondaryDark }]}>View My Visits</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -230,31 +250,6 @@ export const HomeScreen: React.FC = () => {
           </View>
         </TouchableOpacity>
       </View>
-
-      {/* 3. Live OPD Queue Status */}
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => setActiveTab('appointments')}
-        style={styles.liveQueueCard}
-      >
-        <View style={styles.liveQueueLeft}>
-          <View style={styles.liveIndicator}>
-            <View style={styles.liveDot} />
-          </View>
-          <View>
-            <Text style={styles.liveQueueTitle}>
-              {activeClinic ? activeClinic.shortName : 'Sarangpur'} OPD Chamber
-            </Text>
-            <Text style={styles.liveQueueSub}>
-              Now Serving Token: <Text style={styles.liveQueueHighlight}>#{currentQueue?.currentServingToken || 'SAR-015'}</Text>
-            </Text>
-          </View>
-        </View>
-        <View style={styles.liveQueueAction}>
-          <Text style={styles.liveQueueLink}>Live Queue</Text>
-          <Icon name="chevron-right" size={14} color={colors.primary} />
-        </View>
-      </TouchableOpacity>
 
       {/* 4. Specialties Filter */}
       <View style={styles.sectionHeader}>
@@ -325,15 +320,8 @@ export const HomeScreen: React.FC = () => {
                     </View>
                   )}
                 </View>
-                <Text style={styles.doctorSpecialty}>{doc.specialization}</Text>
-                <Text style={styles.doctorQual}>{doc.qualification}</Text>
                 <View style={styles.doctorMetaRow}>
-                  <View style={styles.ratingBadge}>
-                    <Icon name="star" size={11} color="#D97706" />
-                    <Text style={styles.ratingText}>{doc.rating}</Text>
-                  </View>
-                  <Text style={styles.metaDot}>•</Text>
-                  <Text style={styles.doctorExp}>{doc.experienceYears}+ Yrs Exp</Text>
+                  <Text style={styles.doctorExp}>{doc.experienceYears}+ Yrs Experience</Text>
                   <Text style={styles.metaDot}>•</Text>
                   <Text style={styles.doctorFee}>₹{doc.consultationFeeClinic} OPD</Text>
                 </View>
@@ -342,11 +330,10 @@ export const HomeScreen: React.FC = () => {
 
             <View style={styles.doctorActionRow}>
               <Button
-                title="Book Visit"
+                title="Book"
                 onPress={() =>
                   openBookingModal({
                     doctorId: doc.id,
-                    consultationMode: 'IN_CLINIC',
                   })
                 }
                 variant="primary"
@@ -355,51 +342,163 @@ export const HomeScreen: React.FC = () => {
                 style={{ flex: 1 }}
               />
               <Button
-                title="Video Call"
-                onPress={() =>
-                  openBookingModal({
-                    doctorId: doc.id,
-                    consultationMode: 'ONLINE_VIDEO',
-                  })
-                }
-                variant="secondary"
-                size="sm"
-                icon="video"
-                style={{ flex: 1 }}
-              />
-              <TouchableOpacity
-                activeOpacity={0.7}
+                title="Doctor Details"
                 onPress={() => setProfileModalDoctor(doc)}
-                style={styles.doctorInfoBtn}
-              >
-                <Icon name="info" size={16} color={colors.primary} />
-              </TouchableOpacity>
+                variant="outline"
+                size="sm"
+                icon="info"
+                style={{ flex: 1.1 }}
+              />
             </View>
           </CompactCard>
         );
       })}
 
-      {/* 6. Hospital Branches Shortcut */}
+      {/* 6. Care Services Quick Access Banner (Pharmacy, Diagnostics, Lab) */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Hospital Care Services</Text>
+        <TouchableOpacity
+          onPress={() => setActiveTab('care_services')}
+          activeOpacity={0.75}
+        >
+          <Text style={styles.sectionActionLink}>Explore All ›</Text>
+        </TouchableOpacity>
+      </View>
+
       <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => setActiveTab('clinics')}
-        style={styles.branchesSummaryCard}
+        activeOpacity={0.88}
+        onPress={() => setActiveTab('care_services')}
+        style={styles.carePromoCard}
       >
-        <View style={styles.branchesSummaryLeft}>
-          <View style={styles.branchIconWrap}>
-            <Icon name="hospital" size={18} color={colors.primary} />
+        <View style={styles.carePromoHeader}>
+          <View style={styles.carePromoBadge}>
+            <Icon name="sparkles" size={13} color="#D97706" />
+            <Text style={styles.carePromoBadgeText}>Hospital Facilities</Text>
           </View>
-          <View>
-            <Text style={styles.branchesTitle}>4 Hospital Centers</Text>
-            <Text style={styles.branchesSubtitle}>
-              Sarangpur • Shujalpur • Rajgarh • Biaora
-            </Text>
+          <Badge label="NABL & ISO Certified" variant="success" size="sm" />
+        </View>
+
+        <Text style={styles.carePromoTitle}>Pathology Lab, Diagnostics & Pharmacy</Text>
+        <Text style={styles.carePromoSub}>
+          Book home blood sample collection, digital X-Ray & ECG, or order genuine medications with doorstep delivery.
+        </Text>
+
+        <View style={styles.careTagsRow}>
+          <View style={styles.careTagItem}>
+            <Icon name="activity" size={12} color="#059669" />
+            <Text style={styles.careTagText}>Pathology Lab</Text>
+          </View>
+          <View style={styles.careTagItem}>
+            <Icon name="stethoscope" size={12} color={colors.primary} />
+            <Text style={styles.careTagText}>Diagnostics & ECG</Text>
+          </View>
+          <View style={styles.careTagItem}>
+            <Icon name="pill" size={12} color="#D97706" />
+            <Text style={styles.careTagText}>Hospital Pharmacy</Text>
           </View>
         </View>
-        <Icon name="chevron-right" size={15} color={colors.textMuted} />
       </TouchableOpacity>
 
-      {/* 7. Emergency Helpline Banner */}
+      {/* 7. Hospital Branches & OPD Centers Section */}
+      <View style={[styles.sectionHeader, { marginTop: 14 }]}>
+        <View>
+          <Text style={styles.sectionTitle}>Hospital Branches & OPD Centers</Text>
+          <Text style={styles.sectionSubtitle}>
+            4 equipped healthcare centers in Rajgarh District, MP
+          </Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => setActiveTab('clinics')}
+          activeOpacity={0.75}
+        >
+          <Text style={styles.sectionActionLink}>View All (4) ›</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.branchesCarousel}
+      >
+        {CLINICS.map((clinic) => {
+          const queue = queueStatuses[clinic.id];
+          return (
+            <View key={clinic.id} style={styles.branchCardSlide}>
+              <View style={styles.branchCardHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.branchSlideName}>{clinic.name}</Text>
+                  <Text style={styles.branchSlideCity}>
+                    {clinic.city}, Madhya Pradesh
+                  </Text>
+                </View>
+                <View style={styles.branchRatingBadge}>
+                  <Icon name="star" size={11} color={colors.warning} />
+                  <Text style={styles.branchRatingText}>{clinic.rating}</Text>
+                </View>
+              </View>
+
+              <View style={styles.branchMetaRow}>
+                <Icon name="location" size={12} color={colors.primary} />
+                <Text style={styles.branchAddressText} numberOfLines={2}>
+                  {clinic.address}
+                </Text>
+              </View>
+
+              <View style={styles.branchMetaRow}>
+                <Icon name="clock" size={12} color={colors.secondaryDark} />
+                <Text style={styles.branchHoursText} numberOfLines={1}>
+                  {clinic.operatingHours}
+                </Text>
+              </View>
+
+              <View style={styles.branchQueuePill}>
+                <View style={styles.branchStatusDot} />
+                <Text style={styles.branchQueueStatusText}>
+                  OPD Open • {queue?.totalIssuedToday || 12}+ Bookings Today
+                </Text>
+              </View>
+
+              <View style={styles.branchActionRow}>
+                <TouchableOpacity
+                  style={styles.branchSmallBtn}
+                  onPress={() => handleCallClinic(clinic.phone, clinic.name)}
+                  activeOpacity={0.75}
+                >
+                  <Icon name="phone" size={12} color={colors.primary} />
+                  <Text style={styles.branchSmallBtnText}>Call</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.branchSmallBtn}
+                  onPress={() => handleDirectionsClinic(clinic)}
+                  activeOpacity={0.75}
+                >
+                  <Icon name="location" size={12} color={colors.primary} />
+                  <Text style={styles.branchSmallBtnText}>Map</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.branchSmallBtn, styles.branchBookBtn]}
+                  onPress={() =>
+                    openBookingModal({
+                      clinicId: clinic.id,
+                      consultationMode: 'IN_CLINIC',
+                    })
+                  }
+                  activeOpacity={0.8}
+                >
+                  <Icon name="token" size={12} color={colors.white} />
+                  <Text style={[styles.branchSmallBtnText, { color: colors.white }]}>
+                    Book Token
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        })}
+      </ScrollView>
+
+      {/* 8. Emergency Helpline Banner */}
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={handleEmergencyCall}
@@ -494,34 +593,18 @@ export const HomeScreen: React.FC = () => {
 
               <View style={styles.modalFooter}>
                 <Button
-                  title="Book Visit"
+                  title="Book Appointment"
                   onPress={() => {
                     const docId = profileModalDoctor.id;
                     setProfileModalDoctor(null);
                     openBookingModal({
                       doctorId: docId,
-                      consultationMode: 'IN_CLINIC',
                     });
                   }}
                   variant="primary"
                   size="md"
                   icon="token"
-                  style={{ flex: 1 }}
-                />
-                <Button
-                  title="Video Call"
-                  onPress={() => {
-                    const docId = profileModalDoctor.id;
-                    setProfileModalDoctor(null);
-                    openBookingModal({
-                      doctorId: docId,
-                      consultationMode: 'ONLINE_VIDEO',
-                    });
-                  }}
-                  variant="secondary"
-                  size="md"
-                  icon="video"
-                  style={{ flex: 1 }}
+                  fullWidth
                 />
               </View>
             </View>
@@ -1088,41 +1171,191 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  branchesSummaryCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.white,
+  sectionActionLink: {
+    fontSize: typography.sizes.xs,
+    color: colors.primary,
+    fontWeight: typography.weights.bold,
+  },
+  carePromoCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: spacing.borderRadiusMd,
     padding: 12,
     borderWidth: 1,
-    borderColor: colors.border,
-    marginTop: 4,
+    borderColor: '#BAE6FD',
     marginBottom: 10,
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.04,
+    elevation: 1,
   },
-  branchesSummaryLeft: {
+  carePromoHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  carePromoBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    flex: 1,
+    gap: 4,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
-  branchIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: colors.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
+  carePromoBadgeText: {
+    fontSize: 9.5,
+    fontWeight: typography.weights.bold,
+    color: '#B45309',
   },
-  branchesTitle: {
+  carePromoTitle: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
     color: colors.text,
+    marginBottom: 2,
   },
-  branchesSubtitle: {
+  carePromoSub: {
+    fontSize: typography.sizes.xxs,
+    color: colors.textSecondary,
+    lineHeight: 15,
+    marginBottom: 8,
+  },
+  careTagsRow: {
+    flexDirection: 'row',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  careTagItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceSecondary,
+    paddingHorizontal: 8,
+    paddingVertical: 3.5,
+    borderRadius: 6,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  careTagText: {
+    fontSize: 10,
+    fontWeight: typography.weights.semiBold,
+    color: colors.text,
+  },
+  branchesCarousel: {
+    gap: 10,
+    paddingBottom: 4,
+    marginBottom: 12,
+  },
+  branchCardSlide: {
+    width: 255,
+    backgroundColor: '#FFFFFF',
+    borderRadius: spacing.borderRadiusMd,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.05,
+    elevation: 2,
+  },
+  branchCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 6,
+  },
+  branchSlideName: {
     fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.bold,
+    color: colors.text,
+  },
+  branchSlideCity: {
+    fontSize: 10,
     color: colors.textMuted,
     marginTop: 1,
+  },
+  branchRatingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: colors.surfaceSecondary,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  branchRatingText: {
+    fontSize: 10,
+    fontWeight: typography.weights.bold,
+    color: colors.text,
+  },
+  branchMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    marginTop: 4,
+  },
+  branchAddressText: {
+    fontSize: 10.5,
+    color: colors.textSecondary,
+    flex: 1,
+    lineHeight: 14,
+  },
+  branchHoursText: {
+    fontSize: 10,
+    color: colors.textMuted,
+    flex: 1,
+  },
+  branchQueuePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#DCFCE7',
+  },
+  branchStatusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#16A34A',
+  },
+  branchQueueStatusText: {
+    fontSize: 9.5,
+    fontWeight: typography.weights.semiBold,
+    color: '#15803D',
+  },
+  branchActionRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  branchSmallBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 5,
+    backgroundColor: colors.surfaceSecondary,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 4,
+    flex: 1,
+  },
+  branchSmallBtnText: {
+    fontSize: 10.5,
+    fontWeight: typography.weights.bold,
+    color: colors.primary,
+  },
+  branchBookBtn: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    flex: 1.4,
   },
   emergencyCard: {
     flexDirection: 'row',

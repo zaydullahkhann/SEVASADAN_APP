@@ -17,10 +17,14 @@ export const BottomTabBar: React.FC = () => {
     setActiveTab,
     appointments,
     prescriptions,
-    doctors,
     activeDoctorId,
     activeDeskBranchId,
   } = useApp();
+
+  // In ADMIN role, there is NO footer tab bar; drawer sidebar navigation is used instead!
+  if (activeRole === 'ADMIN') {
+    return null;
+  }
 
   const doctorAppointments = appointments.filter(
     (a) => a.doctorId === activeDoctorId || !a.doctorId
@@ -32,21 +36,16 @@ export const BottomTabBar: React.FC = () => {
     (p) => p.doctorId === activeDoctorId
   ).length;
 
-  const deskAppointments = appointments.filter(
-    (a) => activeDeskBranchId === 'all' || a.clinicId === activeDeskBranchId
-  );
-  const deskWaitingCount = deskAppointments.filter(
-    (a) => a.status === 'CONFIRMED'
-  ).length;
-
   const activeAppointmentsCount = appointments.filter(
     (a) => a.status === 'CONFIRMED' || a.status === 'IN_PROGRESS'
   ).length;
 
-  const waitingCount = appointments.filter((a) => a.status === 'CONFIRMED').length;
+  const doctorPastCount = doctorAppointments.filter(
+    (a) => a.status === 'COMPLETED'
+  ).length;
 
   type TabConfig = {
-    key: 'home' | 'appointments' | 'prescriptions' | 'clinics' | 'profile';
+    key: 'home' | 'appointments' | 'prescriptions' | 'care_services' | 'clinics' | 'articles' | 'profile';
     label: string;
     icon: IconName;
     badge?: number;
@@ -56,27 +55,16 @@ export const BottomTabBar: React.FC = () => {
     switch (activeRole) {
       case 'DOCTOR':
         return [
-          { key: 'home', label: 'Doctor OPD', icon: 'stethoscope', badge: doctorWaitingCount },
-          { key: 'appointments', label: 'Visits Log', icon: 'calendar', badge: doctorWaitingCount },
-          { key: 'prescriptions', label: 'Prescriptions', icon: 'prescription', badge: doctorRxCount },
-          { key: 'clinics', label: 'Branches', icon: 'hospital' },
-          { key: 'profile', label: 'Account', icon: 'user' },
+          { key: 'home', label: 'OPD & Live Queue', icon: 'stethoscope', badge: doctorWaitingCount },
+          { key: 'appointments', label: 'Past Consulted', icon: 'user-check', badge: doctorPastCount },
+          { key: 'articles', label: 'Articles', icon: 'file-text', badge: 5 },
+          { key: 'profile', label: 'Profile', icon: 'doctor' },
         ];
       case 'FRONT_DESK':
         return [
-          { key: 'home', label: 'Counter Desk', icon: 'token' },
-          { key: 'appointments', label: 'Check-In', icon: 'check', badge: deskWaitingCount },
-          { key: 'prescriptions', label: 'Prescriptions', icon: 'prescription' },
-          { key: 'clinics', label: 'Counters', icon: 'hospital' },
-          { key: 'profile', label: 'Desk User', icon: 'user' },
-        ];
-      case 'ADMIN':
-        return [
-          { key: 'home', label: 'Overview', icon: 'home' },
-          { key: 'clinics', label: '4 Branches', icon: 'hospital' },
-          { key: 'prescriptions', label: 'Doctors', icon: 'user', badge: doctors.length },
-          { key: 'appointments', label: 'All Visits', icon: 'calendar', badge: activeAppointmentsCount },
-          { key: 'profile', label: 'Admin', icon: 'shield' },
+          { key: 'home', label: 'Live OPD Queue', icon: 'token', badge: activeAppointmentsCount },
+          { key: 'clinics', label: 'Doctor Chambers', icon: 'stethoscope' },
+          { key: 'profile', label: 'Profile', icon: 'user' },
         ];
       case 'PATIENT':
       default:
@@ -84,17 +72,21 @@ export const BottomTabBar: React.FC = () => {
           { key: 'home', label: 'Home', icon: 'home' },
           {
             key: 'appointments',
-            label: 'Visits & Queue',
-            icon: 'token',
+            label: 'Appointments',
+            icon: 'calendar',
             badge: activeAppointmentsCount,
           },
           {
             key: 'prescriptions',
-            label: 'Prescriptions',
+            label: 'Prescription',
             icon: 'prescription',
             badge: prescriptions.length,
           },
-          { key: 'clinics', label: 'Branches', icon: 'hospital' },
+          {
+            key: 'care_services',
+            label: 'Care Service',
+            icon: 'activity',
+          },
           { key: 'profile', label: 'Profile', icon: 'user' },
         ];
     }
@@ -106,7 +98,9 @@ export const BottomTabBar: React.FC = () => {
     <View style={styles.container}>
       <View style={styles.tabRow}>
         {tabs.map((tab) => {
-          const isActive = activeTab === tab.key;
+          const isActive =
+            activeTab === tab.key ||
+            (tab.key === 'care_services' && (activeTab === 'lab' || activeTab === 'pharmacy'));
           return (
             <TouchableOpacity
               key={tab.key}
@@ -208,4 +202,3 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
 });
-

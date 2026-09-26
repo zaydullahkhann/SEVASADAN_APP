@@ -58,9 +58,12 @@ export type IconName =
   | 'share'
   | 'eye'
   | 'eye-off'
+  | 'menu'
   | 'help-circle'
   | 'message-circle'
   | 'zap'
+  | 'trash'
+  | 'trash-2'
   | 'shield-check';
 
 interface IconProps {
@@ -199,6 +202,13 @@ export const Icon: React.FC<IconProps> = ({
           <G fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
             <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
             <Circle cx="12" cy="7" r="4" />
+          </G>
+        );
+
+      case 'menu':
+        return (
+          <G fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M3 12h18M3 6h18M3 18h18" />
           </G>
         );
 
@@ -546,6 +556,16 @@ export const Icon: React.FC<IconProps> = ({
         return (
           <G fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
             <Polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </G>
+        );
+
+      case 'trash':
+      case 'trash-2':
+        return (
+          <G fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            <Line x1="10" y1="11" x2="10" y2="17" />
+            <Line x1="14" y1="11" x2="14" y2="17" />
           </G>
         );
 

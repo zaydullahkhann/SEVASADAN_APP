@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Alert,
   TouchableOpacity,
+  TextInput,
 } from 'react-native';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
@@ -15,7 +16,7 @@ import { Badge } from '../../components/common/Badge';
 import { CompactCard } from '../../components/common/CompactCard';
 import { Button } from '../../components/common/Button';
 import { Icon } from '../../components/common/Icon';
-import { DoctorAvatar } from '../../components/common/DoctorAvatar';
+import { Appointment } from '../../types';
 
 export const DoctorQueueScreen: React.FC = () => {
   const {
@@ -32,27 +33,44 @@ export const DoctorQueueScreen: React.FC = () => {
 
   const doctor = doctors.find((d) => d.id === activeDoctorId) || doctors[0];
 
-  // Current active patient in consultation
-  const activePatient = appointments.find(
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<
+    'WAITING' | 'IN_CONSULT' | 'RESCHEDULED' | 'CANCELLED' | 'COMPLETED' | 'ALL'
+  >('COMPLETED');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Filter appointments for this doctor or all mock doctor appointments
+  const docAppointments = appointments.filter(
     (a) =>
-      a.status === 'IN_PROGRESS' &&
-      (a.doctorId === doctor.id || !a.doctorId)
+      a.doctorId === doctor.id ||
+      !a.doctorId ||
+      a.doctorName.toLowerCase().includes('syed') ||
+      a.doctorName.toLowerCase().includes('ankur')
   );
 
-  // Waiting patients
-  const waitingPatients = appointments.filter(
-    (a) =>
-      a.status === 'CONFIRMED' &&
-      (a.doctorId === doctor.id || !a.doctorId) &&
-      (selectedBranchId === 'all' || a.clinicId === selectedBranchId)
-  );
+  const activePatient = docAppointments.find((a) => a.status === 'IN_PROGRESS');
+  const waitingPatients = docAppointments.filter((a) => a.status === 'CONFIRMED');
+  const completedPatients = docAppointments.filter((a) => a.status === 'COMPLETED');
+  const cancelledPatients = docAppointments.filter((a) => a.status === 'CANCELLED');
+  const rescheduledCount = 0;
 
-  // Completed today
-  const completedPatients = appointments.filter(
-    (a) =>
-      a.status === 'COMPLETED' &&
-      (a.doctorId === doctor.id || !a.doctorId)
-  );
+  // Counts for the horizontal filter pills
+  const counts = {
+    WAITING: waitingPatients.length,
+    IN_CONSULT: activePatient ? 1 : 0,
+    RESCHEDULED: rescheduledCount,
+    CANCELLED: cancelledPatients.length,
+    COMPLETED: completedPatients.length,
+    ALL: docAppointments.length,
+  };
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setIsRefreshing(false);
+      Alert.alert('Queue Synced', 'Live queue synced with Janseva Arogyam server.');
+    }, 400);
+  };
 
   const handleCallNext = () => {
     const called = callNextPatient(selectedBranchId, doctor.id);
@@ -66,117 +84,145 @@ export const DoctorQueueScreen: React.FC = () => {
     }
   };
 
+  // Filtered patients for list
+  const filteredPatients = docAppointments.filter((apt) => {
+    const matchSearch =
+      apt.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      apt.tokenNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      apt.clinicName.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (!matchSearch) return false;
+
+    if (activeFilter === 'WAITING') return apt.status === 'CONFIRMED';
+    if (activeFilter === 'IN_CONSULT') return apt.status === 'IN_PROGRESS';
+    if (activeFilter === 'CANCELLED') return apt.status === 'CANCELLED';
+    if (activeFilter === 'COMPLETED') return apt.status === 'COMPLETED';
+    if (activeFilter === 'RESCHEDULED') return false;
+    return true; // 'ALL'
+  });
+
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
+
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
-      {/* Doctor Header Summary Card */}
-      <CompactCard style={styles.doctorHeaderCard} borderAccent={colors.secondary}>
-        <View style={styles.docHeaderRow}>
-          <DoctorAvatar gender="male" size={50} isHeadSurgeon={true} />
-          <View style={styles.docHeaderInfo}>
-            <View style={styles.nameRow}>
-              <Text style={styles.docName}>{doctor.name}</Text>
-              <Badge
-                label={doctor.dutyStatus === 'AVAILABLE' ? 'On Duty (OPD)' : 'In Surgery'}
-                variant={doctor.dutyStatus === 'AVAILABLE' ? 'success' : 'danger'}
-                size="sm"
-              />
+      {/* 1. Header Bar: Live Patient Queue + REAL-TIME SYNC badge */}
+      <View style={styles.topHeader}>
+        <View style={{ flex: 1 }}>
+          <View style={styles.titleBadgeRow}>
+            <Text style={styles.mainTitle}>Live Patient Queue</Text>
+            <View style={styles.realtimeBadge}>
+              <View style={styles.greenDot} />
+              <Text style={styles.realtimeText}>REAL-TIME SYNC</Text>
             </View>
-            <Text style={styles.docQual}>{doctor.qualification}</Text>
-            <Text style={styles.docSpec}>{doctor.specialization}</Text>
           </View>
+          <Text style={styles.subTitle}>Today's appointments and token status</Text>
         </View>
 
-        {/* Stats Strip */}
-        <View style={styles.statsStrip}>
-          <View style={styles.statCol}>
-            <Text style={styles.statVal}>{waitingPatients.length}</Text>
-            <Text style={styles.statLbl}>Waiting In OPD</Text>
+        <View style={styles.headerRightControls}>
+          <View style={styles.datePill}>
+            <Text style={styles.datePillText}>24 Sept 2026</Text>
           </View>
-          <View style={styles.statDiv} />
-          <View style={styles.statCol}>
-            <Text style={[styles.statVal, { color: colors.secondaryDark }]}>
-              {completedPatients.length}
-            </Text>
-            <Text style={styles.statLbl}>Seen Today</Text>
-          </View>
-          <View style={styles.statDiv} />
-          <View style={styles.statCol}>
-            <Text style={[styles.statVal, { color: colors.primary }]}>
-              ₹{doctor.consultationFeeClinic}
-            </Text>
-            <Text style={styles.statLbl}>OPD Fee</Text>
-          </View>
-        </View>
-
-        {/* Quick Link to Full Patient Visits Log */}
-        <TouchableOpacity
-          style={styles.visitsQuickLink}
-          activeOpacity={0.75}
-          onPress={() => setActiveTab('appointments')}
-        >
-          <View style={styles.visitsQuickLinkLeft}>
-            <View style={styles.calIconBox}>
-              <Icon name="calendar" size={16} color={colors.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.visitsQuickLinkTitle}>
-                Patient Visits & Schedule Log
-              </Text>
-              <Text style={styles.visitsQuickLinkSub}>
-                {waitingPatients.length} waiting • {completedPatients.length} completed today • Tap to open
-              </Text>
-            </View>
-          </View>
-          <Icon name="chevron-right" size={14} color={colors.primary} />
-        </TouchableOpacity>
-      </CompactCard>
-
-      {/* 1. Current Active Consultation (If any) */}
-      <View style={styles.sectionHeader}>
-        <View style={styles.sectionTitleRow}>
-          <View style={styles.activeDot} />
-          <Text style={styles.sectionTitle}>Currently In Consultation</Text>
+          <TouchableOpacity
+            style={styles.refreshBtn}
+            onPress={handleRefresh}
+            activeOpacity={0.7}
+            accessibilityLabel="Refresh Live Queue"
+          >
+            <Icon name="refresh" size={15} color={colors.textSecondary} />
+          </TouchableOpacity>
         </View>
       </View>
 
-      {activePatient ? (
-        <CompactCard style={styles.activePatientCard} borderAccent={colors.primary}>
+      {/* 2. Four Boxes in 2x2 Grid */}
+      <View style={styles.kpiGrid}>
+        {/* Box 1: COMPLETED */}
+        <View style={[styles.kpiBox, styles.kpiBoxCompleted]}>
+          <View style={styles.kpiTopRow}>
+            <Text style={[styles.kpiLabel, { color: '#047857' }]}>COMPLETED</Text>
+            <View style={[styles.kpiIconWrap, { backgroundColor: '#D1FAE5' }]}>
+              <Icon name="check-circle" size={16} color="#059669" />
+            </View>
+          </View>
+          <Text style={[styles.kpiValue, { color: '#065F46' }]}>
+            {completedPatients.length}
+          </Text>
+        </View>
+
+        {/* Box 2: RESCHEDULED */}
+        <View style={[styles.kpiBox, styles.kpiBoxRescheduled]}>
+          <View style={styles.kpiTopRow}>
+            <Text style={[styles.kpiLabel, { color: '#7C3AED' }]}>RESCHEDULED</Text>
+            <View style={[styles.kpiIconWrap, { backgroundColor: '#EDE9FE' }]}>
+              <Icon name="calendar" size={16} color="#7C3AED" />
+            </View>
+          </View>
+          <Text style={[styles.kpiValue, { color: '#5B21B6' }]}>
+            {rescheduledCount}
+          </Text>
+        </View>
+
+        {/* Box 3: CANCELLED */}
+        <View style={[styles.kpiBox, styles.kpiBoxCancelled]}>
+          <View style={styles.kpiTopRow}>
+            <Text style={[styles.kpiLabel, { color: '#DC2626' }]}>CANCELLED</Text>
+            <View style={[styles.kpiIconWrap, { backgroundColor: '#FEE2E2' }]}>
+              <Icon name="close" size={16} color="#DC2626" />
+            </View>
+          </View>
+          <Text style={[styles.kpiValue, { color: '#991B1B' }]}>
+            {cancelledPatients.length}
+          </Text>
+        </View>
+
+        {/* Box 4: ALL */}
+        <View style={[styles.kpiBox, styles.kpiBoxAll]}>
+          <View style={styles.kpiTopRow}>
+            <Text style={[styles.kpiLabel, { color: '#2563EB' }]}>ALL</Text>
+            <View style={[styles.kpiIconWrap, { backgroundColor: '#DBEAFE' }]}>
+              <Icon name="user-check" size={16} color="#2563EB" />
+            </View>
+          </View>
+          <Text style={[styles.kpiValue, { color: '#1E40AF' }]}>
+            {docAppointments.length}
+          </Text>
+        </View>
+      </View>
+
+      {/* 3. Active Consultation Chamber Banner (If patient currently inside) */}
+      {activePatient && (
+        <CompactCard style={styles.activeChamberCard} borderAccent={colors.primary}>
           <View style={styles.activeTopRow}>
-            <View>
-              <Text style={styles.tokenHighlight}>{activePatient.tokenNumber}</Text>
+            <View style={{ flex: 1 }}>
+              <View style={styles.inConsultBadgeRow}>
+                <Badge label="CURRENTLY IN CONSULTATION" variant="primary" size="sm" />
+                <Text style={styles.activeTokenText}>#{activePatient.tokenNumber}</Text>
+              </View>
               <Text style={styles.activePatientName}>{activePatient.patientName}</Text>
-              <Text style={styles.activePatientMeta}>
-                {activePatient.patientAge} Yrs • {activePatient.patientGender} • +91 {activePatient.patientPhone}
+              <Text style={styles.activePatientSub}>
+                {activePatient.patientAge} Yrs • {activePatient.patientGender} • {activePatient.clinicName}
               </Text>
             </View>
-            <Badge
-              label={activePatient.consultationMode === 'ONLINE_VIDEO' ? 'Tele-OPD' : 'In-Clinic'}
-              variant={activePatient.consultationMode === 'ONLINE_VIDEO' ? 'accent' : 'primary'}
-              size="sm"
-            />
           </View>
 
-          <View style={styles.reasonBox}>
-            <Text style={styles.reasonLbl}>Chief Complaint / Symptoms:</Text>
-            <Text style={styles.reasonVal}>
-              {activePatient.reasonForVisit || activePatient.symptoms.join(', ')}
-            </Text>
-          </View>
-
-          {/* Consultation Actions */}
           <View style={styles.activeActionsRow}>
             {activePatient.consultationMode === 'ONLINE_VIDEO' && (
               <Button
-                title="Start Video Call"
+                title="Start Video"
                 onPress={() => openVideoCall(activePatient)}
                 variant="secondary"
                 size="sm"
                 icon="video"
-                style={styles.halfBtn}
+                style={{ flex: 1 }}
               />
             )}
             <Button
@@ -185,7 +231,7 @@ export const DoctorQueueScreen: React.FC = () => {
               variant="primary"
               size="sm"
               icon="prescription"
-              style={styles.halfBtn}
+              style={{ flex: 1.2 }}
             />
             <Button
               title="Done"
@@ -193,130 +239,178 @@ export const DoctorQueueScreen: React.FC = () => {
               variant="outline"
               size="sm"
               icon="check"
+              style={{ flex: 0.8 }}
             />
           </View>
         </CompactCard>
-      ) : (
-        <CompactCard style={styles.noActiveCard}>
-          <Text style={styles.noActiveTitle}>No Patient Currently In Chamber</Text>
-          <Text style={styles.noActiveSub}>
-            Tap "Call Next Patient" below to invite the next token into your room.
-          </Text>
-        </CompactCard>
       )}
 
-      {/* Call Next Button */}
-      <Button
-        title={`Call Next Patient (${waitingPatients.length} Waiting)`}
-        onPress={handleCallNext}
-        variant="secondary"
-        size="md"
-        icon="token"
-        fullWidth
-        style={styles.callNextBtn}
-      />
-
-      {/* 2. Waiting Patients List */}
-      <View style={[styles.sectionHeader, { marginTop: 12 }]}>
-        <Text style={styles.sectionTitle}>
-          Waiting OPD Queue ({waitingPatients.length})
-        </Text>
-        <Text style={styles.sectionSub}>Patients waiting at the clinic counter or for Tele-OPD</Text>
-      </View>
-
-      {waitingPatients.length === 0 ? (
-        <View style={styles.emptyBox}>
-          <Text style={styles.emptyText}>All waiting patients have been attended to!</Text>
-        </View>
-      ) : (
-        waitingPatients.map((apt, idx) => {
-          const isVideo = apt.consultationMode === 'ONLINE_VIDEO';
-          return (
-            <CompactCard key={apt.id} style={styles.waitingCard}>
-              <View style={styles.waitingRow}>
-                <View style={styles.queueIndexBox}>
-                  <Text style={styles.queueIndexText}>#{idx + 1}</Text>
-                  <Text style={styles.queueTokenBadge}>{apt.tokenNumber}</Text>
-                </View>
-
-                <View style={styles.waitingInfo}>
-                  <View style={styles.waitingNameRow}>
-                    <Text style={styles.waitingName}>{apt.patientName}</Text>
-                    <Badge
-                      label={isVideo ? 'Video OPD' : apt.clinicName.split(' ')[0]}
-                      variant={isVideo ? 'accent' : 'neutral'}
-                      size="sm"
-                    />
-                  </View>
-                  <Text style={styles.waitingMeta}>
-                    {apt.patientAge}y • {apt.patientGender} • Slot: {apt.timeSlot}
-                  </Text>
-                  <Text style={styles.waitingReason} numberOfLines={1}>
-                    {apt.reasonForVisit}
-                  </Text>
-                </View>
-
-                <View style={styles.waitingActionCol}>
-                  {isVideo ? (
-                    <Button
-                      title="Video"
-                      onPress={() => openVideoCall(apt)}
-                      variant="secondary"
-                      size="sm"
-                      icon="video"
-                      style={styles.miniBtn}
-                    />
-                  ) : (
-                    <Button
-                      title="Call"
-                      onPress={() => {
-                        callNextPatient(apt.clinicId, doctor.id);
-                      }}
-                      variant="primary"
-                      size="sm"
-                      icon="token"
-                      style={styles.miniBtn}
-                    />
-                  )}
-                </View>
-              </View>
-            </CompactCard>
-          );
-        })
+      {/* Call Next Patient Quick Action */}
+      {waitingPatients.length > 0 && !activePatient && (
+        <Button
+          title={`Call Next Patient (${waitingPatients.length} Waiting)`}
+          onPress={handleCallNext}
+          variant="secondary"
+          size="md"
+          icon="token"
+          style={{ marginBottom: 10 }}
+        />
       )}
 
-      {/* 3. Completed Today List */}
-      <View style={[styles.sectionHeader, { marginTop: 12 }]}>
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>
-            Completed Today ({completedPatients.length})
-          </Text>
-          <TouchableOpacity
-            onPress={() => setActiveTab('appointments')}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            activeOpacity={0.7}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-              <Text style={styles.viewAllVisitsLink}>All Visits Log</Text>
-              <Icon name="chevron-right" size={12} color={colors.primary} />
-            </View>
+      {/* 4. Search Bar */}
+      <View style={styles.searchBox}>
+        <Icon name="search" size={15} color={colors.textMuted} />
+        <TextInput
+          placeholder="Search patient, token or branch..."
+          placeholderTextColor={colors.textLight}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          style={styles.searchInput}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Icon name="close" size={14} color={colors.textMuted} />
           </TouchableOpacity>
-        </View>
+        )}
       </View>
 
-      {completedPatients.map((apt) => (
-        <CompactCard key={apt.id} style={styles.completedCard}>
-          <View style={styles.completedRow}>
-            <View>
-              <Text style={styles.completedName}>{apt.patientName}</Text>
-              <Text style={styles.completedSub}>
-                Token #{apt.tokenNumber} • {apt.clinicName} • {apt.timeSlot}
+      {/* 5. Horizontal Filter Tabs with Counts */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filterScroll}
+        contentContainerStyle={styles.filterScrollContent}
+      >
+        {[
+          { key: 'WAITING' as const, label: `Waiting  ${counts.WAITING}` },
+          { key: 'IN_CONSULT' as const, label: `In Consult  ${counts.IN_CONSULT}` },
+          { key: 'RESCHEDULED' as const, label: `Reschd.  ${counts.RESCHEDULED}` },
+          { key: 'CANCELLED' as const, label: `Cancelled  ${counts.CANCELLED}` },
+          { key: 'COMPLETED' as const, label: `Completed  ${counts.COMPLETED}` },
+          { key: 'ALL' as const, label: `All  ${counts.ALL}` },
+        ].map((tab) => {
+          const isActive = activeFilter === tab.key;
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              onPress={() => setActiveFilter(tab.key)}
+              style={[styles.filterChip, isActive && styles.filterChipActive]}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  isActive && styles.filterChipTextActive,
+                ]}
+              >
+                {tab.label}
               </Text>
-            </View>
-            <Badge label="Visited" variant="success" size="sm" />
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
+      {/* 6. Patient Rows List */}
+      <View style={styles.listSection}>
+        {filteredPatients.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Icon name="user-check" size={32} color={colors.textLight} />
+            <Text style={styles.emptyTitle}>No Patients in This Filter</Text>
+            <Text style={styles.emptySub}>
+              Switch filters above or call in waiting tokens.
+            </Text>
           </View>
-        </CompactCard>
-      ))}
+        ) : (
+          filteredPatients.map((apt, index) => {
+            const isVideo = apt.consultationMode === 'ONLINE_VIDEO';
+            const initials = getInitials(apt.patientName);
+
+            return (
+              <CompactCard key={apt.id} style={styles.patientRowCard}>
+                <View style={styles.rowMain}>
+                  {/* Left: Token Badge */}
+                  <View style={styles.tokenPill}>
+                    <Text style={styles.tokenPillText}># {index + 1}</Text>
+                  </View>
+
+                  {/* Avatar with Initials */}
+                  <View style={styles.initialsAvatar}>
+                    <Text style={styles.initialsText}>{initials}</Text>
+                  </View>
+
+                  {/* Center Info: Name, Age, Branch, Date */}
+                  <View style={styles.patientCenterInfo}>
+                    <View style={styles.nameRow}>
+                      <Text style={styles.patientNameText}>{apt.patientName}</Text>
+                    </View>
+                    <Text style={styles.patientAgeText}>{apt.patientAge} Years</Text>
+
+                    <View style={styles.branchRow}>
+                      <Icon name="hospital" size={11} color="#059669" />
+                      <Text style={styles.branchText} numberOfLines={1}>
+                        {apt.clinicName}
+                      </Text>
+                    </View>
+
+                    <Text style={styles.slotText}>
+                      {apt.date} • {apt.timeSlot}
+                    </Text>
+                  </View>
+
+                  {/* Right Info: Mode & Status */}
+                  <View style={styles.patientRightCol}>
+                    <View style={styles.modeBadge}>
+                      <Icon
+                        name={isVideo ? 'video' : 'hospital'}
+                        size={10}
+                        color="#0F766E"
+                      />
+                      <Text style={styles.modeText}>
+                        {isVideo ? 'Video OPD' : 'In-Clinic'}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        apt.status === 'COMPLETED'
+                          ? styles.statusCompleted
+                          : apt.status === 'IN_PROGRESS'
+                          ? styles.statusInProgress
+                          : apt.status === 'CONFIRMED'
+                          ? styles.statusWaiting
+                          : styles.statusCancelled,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statusBadgeText,
+                          apt.status === 'COMPLETED'
+                            ? styles.statusTextCompleted
+                            : apt.status === 'IN_PROGRESS'
+                            ? styles.statusTextInProgress
+                            : apt.status === 'CONFIRMED'
+                            ? styles.statusTextWaiting
+                            : styles.statusTextCancelled,
+                        ]}
+                      >
+                        {apt.status}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </CompactCard>
+            );
+          })
+        )}
+      </View>
+
+      {/* 7. Bottom Table Summary */}
+      <View style={styles.bottomSummary}>
+        <Text style={styles.bottomSummaryText}>
+          SHOWING {filteredPatients.length > 0 ? `1 - ${filteredPatients.length}` : '0'} OF {docAppointments.length} PATIENTS
+        </Text>
+      </View>
     </ScrollView>
   );
 };
@@ -324,311 +418,379 @@ export const DoctorQueueScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F9FC',
+    backgroundColor: '#F8FAFC',
   },
   contentContainer: {
     paddingHorizontal: spacing.screenPaddingHorizontal,
-    paddingTop: 8,
-    paddingBottom: 24,
+    paddingTop: 12,
+    paddingBottom: 28,
   },
-  doctorHeaderCard: {
-    marginBottom: 8,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  docHeaderRow: {
+  topHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 12,
     gap: 10,
   },
-  docHeaderInfo: {
-    flex: 1,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  docName: {
-    fontSize: typography.sizes.sm + 1,
-    fontWeight: typography.weights.bold,
-    color: colors.text,
-  },
-  docQual: {
-    fontSize: typography.sizes.xxs,
-    color: colors.primary,
-    fontWeight: typography.weights.semiBold,
-  },
-  docSpec: {
-    fontSize: 10,
-    color: colors.textMuted,
-  },
-  statsStrip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    backgroundColor: '#F8FAFC',
-    borderRadius: spacing.borderRadiusSm,
-    paddingVertical: 5,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  statCol: {
-    alignItems: 'center',
-  },
-  statVal: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
-    color: colors.text,
-  },
-  statLbl: {
-    fontSize: 9,
-    color: colors.textMuted,
-  },
-  statDiv: {
-    width: 1,
-    height: 18,
-    backgroundColor: '#E2E8F0',
-  },
-  visitsQuickLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#F0F9FF',
-    borderRadius: spacing.borderRadiusSm,
-    padding: 8,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#BAE6FD',
-  },
-  visitsQuickLinkLeft: {
+  titleBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    flex: 1,
+    flexWrap: 'wrap',
+    marginBottom: 2,
   },
-  calIconBox: {
-    width: 30,
-    height: 30,
-    borderRadius: 6,
-    backgroundColor: '#E0F2FE',
-    justifyContent: 'center',
-    alignItems: 'center',
+  mainTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
   },
-  visitsQuickLinkTitle: {
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.bold,
-    color: colors.primary,
-  },
-  visitsQuickLinkSub: {
-    fontSize: typography.sizes.xxs,
-    color: colors.textMuted,
-    marginTop: 1,
-  },
-  sectionHeader: {
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  sectionHeaderRow: {
+  realtimeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    gap: 5,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
   },
-  sectionTitleRow: {
+  greenDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#16A34A',
+  },
+  realtimeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#15803D',
+    letterSpacing: 0.3,
+  },
+  subTitle: {
+    fontSize: 11,
+    color: '#64748B',
+  },
+  headerRightControls: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
-  activeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.secondary,
-  },
-  sectionTitle: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
-    color: colors.text,
-  },
-  sectionSub: {
-    fontSize: typography.sizes.xxs,
-    color: colors.textMuted,
-  },
-  viewAllVisitsLink: {
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.bold,
-    color: colors.primary,
-  },
-  activePatientCard: {
-    backgroundColor: colors.white,
-    borderRadius: 10,
+  datePill: {
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#BAE6FD',
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  datePillText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#334155',
+  },
+  refreshBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  kpiGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+  },
+  kpiBox: {
+    width: '48.6%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
     padding: 10,
-    marginBottom: 8,
+    borderWidth: 1.5,
+  },
+  kpiBoxCompleted: {
+    borderColor: '#A7F3D0',
+    backgroundColor: '#F0FDF4',
+  },
+  kpiBoxRescheduled: {
+    borderColor: '#DDD6FE',
+    backgroundColor: '#F5F3FF',
+  },
+  kpiBoxCancelled: {
+    borderColor: '#FECDD3',
+    backgroundColor: '#FFF1F2',
+  },
+  kpiBoxAll: {
+    borderColor: '#BFDBFE',
+    backgroundColor: '#EFF6FF',
+  },
+  kpiTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  kpiLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  kpiIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  kpiValue: {
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  activeChamberCard: {
+    backgroundColor: '#FFFFFF',
+    marginBottom: 10,
+    padding: 12,
   },
   activeTopRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 10,
   },
-  tokenHighlight: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.extraBold,
+  inConsultBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  activeTokenText: {
+    fontSize: 14,
+    fontWeight: '800',
     color: colors.primary,
   },
   activePatientName: {
-    fontSize: typography.sizes.base,
-    fontWeight: typography.weights.bold,
-    color: colors.text,
-    marginTop: 1,
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
   },
-  activePatientMeta: {
-    fontSize: typography.sizes.xxs,
-    color: colors.textMuted,
-    marginTop: 1,
-  },
-  reasonBox: {
-    backgroundColor: '#F8FAFC',
-    padding: 8,
-    borderRadius: 6,
-    marginTop: 6,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  reasonLbl: {
-    fontSize: typography.sizes.xxs,
-    color: colors.textMuted,
-    fontWeight: typography.weights.semiBold,
-  },
-  reasonVal: {
-    fontSize: typography.sizes.xs,
-    color: colors.text,
+  activePatientSub: {
+    fontSize: 11,
+    color: '#64748B',
     marginTop: 2,
   },
   activeActionsRow: {
     flexDirection: 'row',
     gap: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
-  halfBtn: {
-    flex: 1,
-  },
-  noActiveCard: {
-    backgroundColor: colors.white,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 14,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  noActiveTitle: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
-    color: colors.textSecondary,
-  },
-  noActiveSub: {
-    fontSize: typography.sizes.xxs,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: 2,
-  },
-  callNextBtn: {
-    marginBottom: 8,
-  },
-  emptyBox: {
-    backgroundColor: colors.white,
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  emptyText: {
-    fontSize: typography.sizes.xs,
-    color: colors.textMuted,
-  },
-  waitingCard: {
-    backgroundColor: colors.white,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 8,
-    marginBottom: 6,
-  },
-  waitingRow: {
+  searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 8,
     gap: 8,
   },
-  queueIndexBox: {
-    alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    borderRadius: 6,
-    minWidth: 46,
-  },
-  queueIndexText: {
-    fontSize: 9,
-    color: colors.textMuted,
-    fontWeight: typography.weights.bold,
-  },
-  queueTokenBadge: {
-    fontSize: 10,
-    fontWeight: typography.weights.bold,
-    color: colors.primary,
-  },
-  waitingInfo: {
+  searchInput: {
     flex: 1,
+    fontSize: 12,
+    color: '#0F172A',
+    padding: 0,
   },
-  waitingNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  filterScroll: {
+    maxHeight: 36,
+    marginBottom: 10,
+  },
+  filterScrollContent: {
     gap: 6,
+    paddingRight: 10,
   },
-  waitingName: {
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.bold,
-    color: colors.text,
-  },
-  waitingMeta: {
-    fontSize: 9,
-    color: colors.textMuted,
-  },
-  waitingReason: {
-    fontSize: 9.5,
-    color: colors.textSecondary,
-    marginTop: 1,
-  },
-  waitingActionCol: {},
-  miniBtn: {
-    minWidth: 60,
-  },
-  completedCard: {
-    backgroundColor: colors.white,
-    borderRadius: 8,
+  filterChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#F1F5F9',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    padding: 8,
-    marginBottom: 6,
   },
-  completedRow: {
+  filterChipActive: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#0F4C81',
+    borderWidth: 1.5,
+  },
+  filterChipText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  filterChipTextActive: {
+    color: '#0F4C81',
+    fontWeight: '800',
+  },
+  listSection: {
+    gap: 8,
+  },
+  patientRowCard: {
+    backgroundColor: '#FFFFFF',
+    padding: 10,
+    marginBottom: 4,
+  },
+  rowMain: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 10,
   },
-  completedName: {
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.bold,
-    color: colors.text,
+  tokenPill: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
   },
-  completedSub: {
-    fontSize: 9,
-    color: colors.textMuted,
+  tokenPillText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#1D4ED8',
+  },
+  initialsAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#0F4C81',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  initialsText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  patientCenterInfo: {
+    flex: 1,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  patientNameText: {
+    fontSize: 12.5,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  patientAgeText: {
+    fontSize: 10,
+    color: '#64748B',
     marginTop: 1,
+  },
+  branchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 3,
+  },
+  branchText: {
+    fontSize: 9.5,
+    color: '#059669',
+    fontWeight: '600',
+  },
+  slotText: {
+    fontSize: 9.5,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  patientRightCol: {
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  modeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDFA',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    gap: 3,
+    borderWidth: 1,
+    borderColor: '#CCFBF1',
+  },
+  modeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#0F766E',
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  statusCompleted: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+  statusInProgress: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
+  },
+  statusWaiting: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
+  },
+  statusCancelled: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECDD3',
+  },
+  statusBadgeText: {
+    fontSize: 8.5,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  statusTextCompleted: {
+    color: '#16A34A',
+  },
+  statusTextInProgress: {
+    color: '#2563EB',
+  },
+  statusTextWaiting: {
+    color: '#D97706',
+  },
+  statusTextCancelled: {
+    color: '#DC2626',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 30,
+    gap: 6,
+  },
+  emptyTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  emptySub: {
+    fontSize: 11,
+    color: '#64748B',
+  },
+  bottomSummary: {
+    marginTop: 12,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  bottomSummaryText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.8,
   },
 });

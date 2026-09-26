@@ -63,7 +63,7 @@ export const AuthScreen: React.FC = () => {
     if (!success) {
       Alert.alert(
         'Login Failed',
-        'Invalid credentials. Please use the Demo Credentials or enter valid credentials.'
+        'Invalid credentials. Please use the 1-Tap Auto-fill or enter valid credentials.'
       );
     }
   };
@@ -111,8 +111,8 @@ export const AuthScreen: React.FC = () => {
   const rolesConfig: { role: UserRole; label: string; icon: IconName }[] = [
     { role: 'PATIENT', label: 'Patient', icon: 'user' },
     { role: 'DOCTOR', label: 'Doctor', icon: 'stethoscope' },
-    { role: 'FRONT_DESK', label: 'Front Desk', icon: 'desk' },
-    { role: 'ADMIN', label: 'Admin', icon: 'shield-check' },
+    { role: 'FRONT_DESK', label: 'Desk Staff', icon: 'token' },
+    { role: 'ADMIN', label: 'Admin', icon: 'shield' },
   ];
 
   return (
@@ -129,15 +129,15 @@ export const AuthScreen: React.FC = () => {
         {/* Brand Banner */}
         <View style={styles.brandHero}>
           <HospitalLogo size={46} badgeBg="#FFFFFF" color={colors.primary} style={styles.logoBadge} />
-          <Text style={styles.brandName}>SEVASADAN</Text>
+          <Text style={styles.brandName}>JANSEVA AROGYAM</Text>
           <Text style={styles.brandTag}>
-            SUPER SPECIALTY OPD & TELEMEDICINE NETWORK
+            SPECIALIST OPD HOSPITAL & HEALTHCARE NETWORK
           </Text>
           <Text style={styles.doctorHonors}>
-            Dr. Ankur Deshwali (MBBS, MS, MCh) • 3× MPPSC Gazetted Specialist
+            Dr. Ankur Deshwali (MBBS, MS, MCh) • Specialist Consultation
           </Text>
           <Text style={styles.branchesSubtitle}>
-            Sarangpur • Shujalpur • Rajgarh • Biaora (MP)
+            Rajgarh • Sarangpur • Shujalpur (MP)
           </Text>
         </View>
 
@@ -199,7 +199,7 @@ export const AuthScreen: React.FC = () => {
                     >
                       <Icon
                         name={item.icon}
-                        size={13}
+                        size={12}
                         color={isSelected ? colors.primary : colors.textSecondary}
                       />
                       <Text
@@ -207,6 +207,7 @@ export const AuthScreen: React.FC = () => {
                           styles.roleChipText,
                           isSelected && styles.roleChipTextActive,
                         ]}
+                        numberOfLines={1}
                       >
                         {item.label}
                       </Text>
@@ -216,19 +217,38 @@ export const AuthScreen: React.FC = () => {
               </View>
 
               {/* Demo Credentials Box */}
-              <View style={styles.demoCard}>
+              <View
+                style={[
+                  styles.demoCard,
+                  selectedRole === 'ADMIN' && {
+                    backgroundColor: '#FAF5FF',
+                    borderColor: '#DDD6FE',
+                  },
+                ]}
+              >
                 <View style={styles.demoTopRow}>
                   <View style={styles.demoTitleWrap}>
-                    <Text style={styles.demoTitle}>
-                      Demo Credentials ({currentDemo.name})
+                    <Text
+                      style={[
+                        styles.demoTitle,
+                        selectedRole === 'ADMIN' && { color: '#6D28D9' },
+                      ]}
+                    >
+                      {selectedRole === 'ADMIN'
+                        ? 'Admin Credentials (jansevaarogyam.com)'
+                        : `Demo Credentials (${currentDemo.name})`}
                     </Text>
                     <Text style={styles.demoSubtitle}>{currentDemo.subtitle}</Text>
                   </View>
-                  <Badge label="1-TAP READY" variant="success" size="sm" />
+                  <Badge
+                    label="1-TAP READY"
+                    variant={selectedRole === 'ADMIN' ? 'purple' : 'success'}
+                    size="sm"
+                  />
                 </View>
 
                 <View style={styles.credRow}>
-                  <Text style={styles.credLabel}>ID / Phone:</Text>
+                  <Text style={styles.credLabel}>Login Email / ID:</Text>
                   <Text style={styles.credValue}>{currentDemo.id}</Text>
                 </View>
 
@@ -240,7 +260,7 @@ export const AuthScreen: React.FC = () => {
                 <Button
                   title={`Auto-Fill & Sign In as ${selectedRole}`}
                   onPress={handleAutoFillAndLogin}
-                  variant="secondary"
+                  variant={selectedRole === 'ADMIN' ? 'primary' : 'secondary'}
                   size="sm"
                   icon="check"
                   fullWidth
@@ -256,8 +276,8 @@ export const AuthScreen: React.FC = () => {
                     : selectedRole === 'DOCTOR'
                     ? 'Doctor ID / Email *'
                     : selectedRole === 'FRONT_DESK'
-                    ? 'Desk Operator ID *'
-                    : 'Admin Email / Username *'}
+                    ? 'Desk Staff Email / ID *'
+                    : 'Admin Email (jansevaarogyam@gmail.com) *'}
                 </Text>
                 <TextInput
                   value={loginId}
@@ -265,7 +285,7 @@ export const AuthScreen: React.FC = () => {
                   placeholder={
                     selectedRole === 'PATIENT'
                       ? '10-digit mobile number'
-                      : 'Enter username or ID'
+                      : 'Enter username or email'
                   }
                   keyboardType={
                     selectedRole === 'PATIENT' ? 'phone-pad' : 'email-address'
@@ -543,19 +563,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 6,
-    paddingHorizontal: 4,
+    paddingHorizontal: 2,
     borderRadius: spacing.borderRadiusSm,
     backgroundColor: colors.surfaceSecondary,
     borderWidth: 1.5,
     borderColor: colors.border,
-    gap: 4,
+    gap: 3,
   },
   roleChipActive: {
     borderColor: colors.primary,
     backgroundColor: colors.primaryLight,
   },
   roleChipText: {
-    fontSize: typography.sizes.xxs,
+    fontSize: 9.5,
     fontWeight: typography.weights.medium,
     color: colors.textSecondary,
   },

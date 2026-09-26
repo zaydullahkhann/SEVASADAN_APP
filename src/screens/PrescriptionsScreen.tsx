@@ -135,23 +135,23 @@ export const PrescriptionsScreen: React.FC = () => {
               {/* Action Buttons Footer */}
               <View style={styles.actionsRow}>
                 <Button
-                  title="View Prescription"
+                  title="View Details"
                   onPress={() => setSelectedRx(rx)}
                   variant="outline"
                   size="sm"
                   icon="receipt"
                   style={{ flex: 1 }}
                 />
-                {activeRole === 'PATIENT' && rx.followUpAdvised && (
-                  <Button
-                    title="Book Follow-up"
-                    onPress={() => handleBookFollowUp(rx)}
-                    variant="secondary"
-                    size="sm"
-                    icon="calendar"
-                    style={{ flex: 1.2 }}
-                  />
-                )}
+                <Button
+                  title="Share Prescription"
+                  onPress={() =>
+                    handleShareRx(rx.id, rx.doctorName, rx.diagnosis)
+                  }
+                  variant="secondary"
+                  size="sm"
+                  icon="share"
+                  style={{ flex: 1 }}
+                />
               </View>
             </CompactCard>
           );
@@ -251,6 +251,13 @@ export const PrescriptionsScreen: React.FC = () => {
               {/* Modal Footer */}
               <View style={styles.modalFooter}>
                 <Button
+                  title="Close"
+                  onPress={() => setSelectedRx(null)}
+                  variant="outline"
+                  size="md"
+                  style={{ flex: 1 }}
+                />
+                <Button
                   title="Share Prescription"
                   onPress={() =>
                     handleShareRx(
@@ -259,25 +266,11 @@ export const PrescriptionsScreen: React.FC = () => {
                       selectedRx.diagnosis
                     )
                   }
-                  variant="outline"
+                  variant="primary"
                   size="md"
                   icon="receipt"
-                  style={{ flex: 1 }}
+                  style={{ flex: 1.5 }}
                 />
-                {activeRole === 'PATIENT' && selectedRx.followUpAdvised && (
-                  <Button
-                    title="Book Follow-up"
-                    onPress={() => {
-                      const rx = selectedRx;
-                      setSelectedRx(null);
-                      handleBookFollowUp(rx);
-                    }}
-                    variant="primary"
-                    size="md"
-                    icon="calendar"
-                    style={{ flex: 1.2 }}
-                  />
-                )}
               </View>
             </View>
           </View>
